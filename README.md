@@ -9,3 +9,6 @@ This quick start for OpenUnison is designed to provide an identity management hu
 4. Support removing users' access
 5. Reporting
 
+The quick start can run inside of OpenShift, leveraging OpenShift for scalability and secret management.  It can also be run externally to OpenShift.  
+
+![OpenShift Identity Manager Architecture](imgs/openunison_qs_openshift.png)
