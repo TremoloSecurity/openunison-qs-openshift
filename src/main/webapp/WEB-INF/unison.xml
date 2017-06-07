@@ -1,0 +1,1151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tremoloConfig xmlns="http://www.tremolosecurity.com/tremoloConfig" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.tremolosecurity.com/tremoloConfig tremoloConfig.xsd">
+  <applications openSessionCookieName="openSession" openSessionTimeout="9000">
+    <application name="scale" azTimeoutMillis="30000" >
+      <urls>
+        <!-- The regex attribute defines if the proxyTo tag should be interpreted with a regex or not -->
+        <!-- The authChain attribute should be the name of an authChain -->
+        <url regex="false" authChain="activeDirectory" overrideHost="true" overrideReferer="true">
+          <!-- Any number of host tags may be specified to allow for an application to work on multiple hosts.  Additionally an asterick (*) can be specified to make this URL available for ALL hosts -->
+          <host>#[OU_HOST]</host>
+          <!-- The filterChain allows for transformations of the request such as manipulating attributes and injecting headers -->
+          <filterChain>
+            <!--<filter class="com.tremolosecurity.prelude.filters.LoginTest">
+              <param name="logoutURI" value="/logout"/>
+            </filter>-->
+            <filter class="com.tremolosecurity.prelude.filters.StopProcessing" />
+          </filterChain>
+          <!-- The URI (aka path) of this URL -->
+          <uri>/</uri>
+          <!-- Tells OpenUnison how to reach the downstream application.  The ${} lets you set any request variable into the URI, but most of the time ${fullURI} is sufficient -->
+          <proxyTo>http://dnm${fullURI}</proxyTo>
+          <!-- List the various results that should happen -->
+          <results>
+            <azSuccess>ScaleJSRedirect</azSuccess>
+          </results>
+          <!-- Determine if the currently logged in user may access the resource.  If ANY rule succeeds, the authorization succeeds.
+          The scope may be one of group, dn, filter, dynamicGroup or custom
+          The constraint identifies what needs to be satisfied for the authorization to pass and is dependent on the scope:
+            * group - The DN of the group in OpenUnison's virtual directory (must be an instance of groupOfUniqueNames)
+            * dn - The base DN of the user or users in OpenUnison's virtual directory
+            * dynamicGroup - The DN of the dynamic group in OpenUnison's virtual directory (must be an instance of groupOfUrls)
+            * custom - An implementation of com.tremolosecurity.proxy.az.CustomAuthorization -->
+          <azRules>
+            <rule scope="dn" constraint="o=Tremolo" />
+          </azRules>
+        </url>
+        <url regex="false" authChain="activeDirectory" overrideHost="true" overrideReferer="true">
+          <!-- Any number of host tags may be specified to allow for an application to work on multiple hosts.  Additionally an asterick (*) can be specified to make this URL available for ALL hosts -->
+          <host>#[OU_HOST]</host>
+          <!-- The filterChain allows for transformations of the request such as manipulating attributes and injecting headers -->
+          <filterChain>
+            <filter class="com.tremolosecurity.prelude.filters.StopProcessing" />
+          </filterChain>
+          <!-- The URI (aka path) of this URL -->
+          <uri>/logout</uri>
+          <!-- Tells OpenUnison how to reach the downstream application.  The ${} lets you set any request variable into the URI, but most of the time ${fullURI} is sufficient -->
+          <proxyTo>http://dnm${fullURI}</proxyTo>
+          <!-- List the various results that should happen -->
+          <results>
+            <azSuccess>Logout</azSuccess>
+          </results>
+          <!-- Determine if the currently logged in user may access the resource.  If ANY rule succeeds, the authorization succeeds.
+                    The scope may be one of group, dn, filter, dynamicGroup or custom
+                    The constraint identifies what needs to be satisfied for the authorization to pass and is dependent on the scope:
+                      * group - The DN of the group in OpenUnison's virtual directory (must be an instance of groupOfUniqueNames)
+                      * dn - The base DN of the user or users in OpenUnison's virtual directory
+                      * dynamicGroup - The DN of the dynamic group in OpenUnison's virtual directory (must be an instance of groupOfUrls)
+                      * custom - An implementation of com.tremolosecurity.proxy.az.CustomAuthorization -->
+          <azRules>
+            <rule scope="dn" constraint="o=Tremolo" />
+          </azRules>
+        </url>
+        <url regex="false" authChain="activeDirectory" overrideHost="true" overrideReferer="true">
+          <host>#[OU_HOST]</host>
+          <filterChain>
+            <filter class="com.tremolosecurity.proxy.filters.RemovePrefix">
+              <param name="prefix" value="/scale"/>
+              <param name="attributeName" value="trimmedURI"/>
+            </filter>
+          </filterChain>
+          <uri>/scale</uri>
+          <proxyTo>https://cdn.rawgit.com/TremoloSecurity/OpenUnison/1.0.11/unison/unison-scalejs-main/src/main/html${trimmedURI}</proxyTo>
+          <results>
+            <azSuccess>
+            </azSuccess>
+            <auFail>Default Login Failure</auFail>
+            <azFail>Default Login Failure</azFail>
+          </results>
+          <azRules>
+            <rule scope="dn" constraint="o=Tremolo" />
+          </azRules>
+        </url>
+        <url regex="false" authChain="activeDirectory" overrideHost="true" overrideReferer="true">
+          <host>#[OU_HOST]</host>
+          <filterChain>
+            <filter class="com.tremolosecurity.scalejs.ws.ScaleMain">
+              <param name="displayNameAttribute" value="mail"/>
+              <param name="frontPage.title" value="OpenShift Access Portal"/>
+              <param name="frontPage.text" value="Use this portal to create and access projects in OpenShift"/>
+              <param name="canEditUser" value="false"/>
+              <param name="workflowName" value=""/>
+              <param name="warnMinutesLeft" value="5" />
+              <param name="attributeNames" value="uid"/>
+              <param name="uid.displayName" value="Login ID"/>
+              <param name="uid.readOnly" value="true"/>
+              <param name="attributeNames" value="givenname"/>
+              <param name="givenname.displayName" value="First Name"/>
+              <param name="givenname.readOnly" value="true"/>
+              <param name="attributeNames" value="sn"/>
+              <param name="sn.displayName" value="Last Name"/>
+              <param name="sn.readOnly" value="true"/>
+              <param name="attributeNames" value="mail"/>
+              <param name="mail.displayName" value="Email Address"/>
+              <param name="mail.readOnly" value="true"/>
+              <param name="attributeNames" value="mail"/>
+              <param name="mail.displayName" value="Email Address"/>
+              <param name="mail.readOnly" value="true"/>
+              <param name="uidAttributeName" value="uid"/>
+              <param name="roleAttribute" value="groups"/>
+              <param name="approvalAttributeNames" value="uid"/>
+              <param name="approvalAttributeNames" value="mail"/>
+              <param name="approvals.uid" value="Login ID"/>
+              <param name="approvals.mail" value="Email Address"/>
+              <param name="showPortalOrgs" value="false"/>
+              <param name="logoutURL" value="/logout"/>
+              <param name="canDelegate" value="yes" />
+              <param name="canPreApprove" value="yes" />
+
+            </filter>
+          </filterChain>
+          <uri>/scale/main</uri>
+          <results>
+            <azSuccess>
+            </azSuccess>
+            <auFail>Default Login Failure</auFail>
+            <azFail>Default Login Failure</azFail>
+          </results>
+          <azRules>
+            <rule scope="dn" constraint="o=Tremolo" />
+          </azRules>
+        </url>
+        <url regex="false" authChain="activeDirectory" overrideHost="false" overrideReferer="false">
+                    <host>#[OU_HOST]</host>
+                    <filterChain>
+                        <filter class="com.tremolosecurity.scalejs.register.ws.ScaleRegister">
+                            <param name="displayNameAttribute" value="mail"/>
+                            <param name="uidAttributeName" value="uid"/>
+                            <param name="workflowName" value="NewOpenShiftProject"/>
+                            <param name="logoutURL" value="/logout"/>
+                            <param name="homeURL" value="/"/>
+                            <param name="frontPage.text" value="Use this page to request the creation of a new project.  Once the project is approved you will be the first approver and administrator.  You will be notified when the project is ready."/>
+                            <param name="frontPage.title" value="Create New Project"/>
+                            <param name="preSetPassword" value="false"/>
+                            <param name="requireReason" value="true"/>
+                            <param name="requireReCaptcha" value="false"/>
+                            <param name="rcSiteKey" value=""/>
+                            <param name="rcSecret" value=""/>
+                            <param name="requireTermsAndConditions" value="false"/>
+                            <param name="termsAndConditionsText" value=""/>
+                            <param name="useCallWorkflowClass" value="false"/>
+                            <param name="callWorkflowClassName" value=""/>
+                            <param name="submitLoggedInUser" value="true"/>
+                            <param name="attributeNames" value="projectName"/>
+                            <param name="projectName.displayName" value="Project Name"/>
+                            <param name="projectName.readOnly" value="false"/>
+                            <param name="projectName.required" value="false"/>
+                            <param name="projectName.regEx" value=".*"/>
+                            <param name="projectName.regExFailedMsg" value="Required"/>
+                            <param name="projectName.minChars" value="0"/>
+                            <param name="projectName.maxChars" value="0"/>
+                            <param name="projectName.unique" value="false"/>
+                            <param name="projectName.type" value="text"/>
+                        </filter>
+                    </filterChain>
+                    <uri>/newproject/register</uri>
+                    <results>
+                        <auSuccess></auSuccess>
+                        <auFail>Default Login Failure</auFail>
+                        <azSuccess></azSuccess>
+                        <azFail>PrivilegedRequest</azFail>
+                    </results>
+                    <azRules>
+                        <rule scope="dn" constraint="o=Tremolo"/>
+                    </azRules>
+                </url>
+                <url regex="false" authChain="activeDirectory" overrideHost="false" overrideReferer="false">
+                    <host>#[OU_HOST]</host>
+                    <filterChain>
+                      <filter class="com.tremolosecurity.proxy.filters.RemovePrefix">
+                        <param name="prefix" value="/newproject"/>
+                        <param name="attributeName" value="trimmedURI"/>
+                      </filter>
+                    </filterChain>
+                    <uri>/newproject</uri>
+                    <proxyTo>https://cdn.rawgit.com/TremoloSecurity/OpenUnison/1.0.11/unison/unison-scalejs-register/src/main/html${trimmedURI}</proxyTo>
+                    <results>
+                        <auSuccess></auSuccess>
+                        <auFail>Default Login Failure</auFail>
+                        <azSuccess></azSuccess>
+                        <azFail>PrivilegedRequest</azFail>
+                    </results>
+                    <azRules>
+                        <rule scope="dn" constraint="o=Tremolo"/>
+                    </azRules>
+                </url>
+
+
+
+      </urls>
+      <!-- The cookie configuration determines how sessions are managed for this application -->
+      <cookieConfig>
+        <!-- The name of the session cookie for this application.  Applications that want SSO between them should have the same cookie name -->
+        <sessionCookieName>tremolosession</sessionCookieName>
+        <!-- The domain of component of the cookie -->
+        <domain>#[OU_HOST]</domain>
+        <!-- The URL that OpenUnison will interpret as the URL to end the session -->
+        <logoutURI>/logout</logoutURI>
+        <!-- The name of the AES-256 key in the keystore to use to encrypt this session -->
+        <keyAlias>session-unison</keyAlias>
+        <!-- If set to true, the cookie's secure flag is set to true and the browser will only send this cookie over https connections -->
+        <secure>false</secure>
+        <!-- The number of secconds that the session should be allowed to be idle before no longer being valid -->
+        <timeout>900</timeout>
+        <!-- required but ignored -->
+        <scope>-1</scope>
+      </cookieConfig>
+    </application>
+    <application name="ScaleCheckSession" azTimeoutMillis="30000" >
+      <urls>
+        <url regex="false" authChain="anon" overrideHost="true" overrideReferer="true">
+          <host>#[OU_HOST]</host>
+          <filterChain>
+            <filter class="com.tremolosecurity.proxy.filters.CheckSession">
+              <param name="applicationName" value="scale"/>
+            </filter>
+          </filterChain>
+          <uri>/newproject/sessioncheck</uri>
+          <results>
+            <azSuccess>
+            </azSuccess>
+          </results>
+          <azRules>
+            <rule scope="dn" constraint="o=Tremolo" />
+          </azRules>
+        </url>
+        <url regex="false" authChain="anon" overrideHost="true" overrideReferer="true">
+          <host>#[OU_HOST]</host>
+          <filterChain>
+            <filter class="com.tremolosecurity.proxy.filters.CheckSession">
+              <param name="applicationName" value="scale"/>
+            </filter>
+          </filterChain>
+          <uri>/scale/sessioncheck</uri>
+          <results>
+            <azSuccess>
+            </azSuccess>
+          </results>
+          <azRules>
+            <rule scope="dn" constraint="o=Tremolo" />
+          </azRules>
+        </url>
+      </urls>
+      <cookieConfig>
+        <sessionCookieName>checksession</sessionCookieName>
+        <domain>#[OU_HOST]</domain>
+        <logoutURI>/scale/sessioncheck</logoutURI>
+        <keyAlias>session-unison</keyAlias>
+        <secure>false</secure>
+        <timeout>true</timeout>
+        <scope>-1</scope>
+      </cookieConfig>
+    </application>
+
+    <application name="CheckAlive" azTimeoutMillis="30000" >
+      <urls>
+        <url regex="false" authChain="anon" overrideHost="true" overrideReferer="true">
+          <host>*</host>
+          <filterChain>
+            <filter class="com.tremolosecurity.prelude.filters.LoginTest">
+              <param name="logoutURI" value="/logout"/>
+              <param name="jspURI" value="/auth/forms/loginTestSimple.jsp" />
+            </filter>
+          </filterChain>
+          <uri>/check_alive</uri>
+          <results>
+            <azSuccess>
+            </azSuccess>
+          </results>
+          <azRules>
+            <rule scope="dn" constraint="o=Tremolo" />
+          </azRules>
+        </url>
+
+      </urls>
+      <cookieConfig>
+        <sessionCookieName>checkalive</sessionCookieName>
+        <domain>*</domain>
+        <logoutURI>/check_alive</logoutURI>
+        <keyAlias>session-unison</keyAlias>
+        <secure>false</secure>
+        <timeout>true</timeout>
+        <scope>-1</scope>
+      </cookieConfig>
+    </application>
+    <application name="OpenShiftIdP" isApp="false" azTimeoutMillis="30000">
+            <results/>
+            <urls>
+                <url regex="false">
+                    <host>#[OU_HOST]</host>
+                    <host>#[OPENSHIFT_OU_HOST]</host>
+                    <filterChain/>
+                    <uri>/auth/idp/OpenShiftIdP</uri>
+                    <results>
+                        <auSuccess></auSuccess>
+                        <auFail>Default Login Failure</auFail>
+                        <azSuccess></azSuccess>
+                        <azFail>Default Login Failure</azFail>
+                    </results>
+                    <azRules>
+                        <rule scope="dn" constraint="o=Tremolo"/>
+                    </azRules>
+                    <idp className="com.tremolosecurity.idp.providers.OpenIDConnectIdP">
+                        <params name="jwtSigningKey" value="sigenc-saml2-sig"/>
+                        <params name="driver" value="#[OU_JDBC_DRIVER]"/>
+                        <params name="url" value="#[OU_JDBC_URL]"/>
+                        <params name="user" value="#[OU_JDBC_USER]"/>
+                        <params name="password" value="#[OU_JDBC_PASSWORD]"/>
+                        <params name="maxCons" value="10"/>
+                        <params name="maxIdleCons" value="10"/>
+                        <params name="dialect" value="#[OU_HIBERNATE_DIALECT]"/>
+                        <params name="validationQuery" value="#[OU_JDBC_VALIDATION]"/>
+                        <mappings strict="true">
+                            <mapping targetAttributeName="sub" targetAttributeSource="uid" sourceType="user"/>
+                            <mapping targetAttributeName="name" targetAttributeSource="${givenname} ${sn}" sourceType="composite"/>
+                            <mapping targetAttributeName="preferred_username" targetAttributeSource="uid" sourceType="user"/>
+                            <mapping targetAttributeName="email" targetAttributeSource="mail" sourceType="user"/>
+                        </mappings>
+                        <trusts>
+                            <trust name="openshift">
+                              <param name="clientID" value="openshift"/>
+                              <param name="clientSecret" value="#[OU_OIDC_OPENSHIFT_SECRET]"/>
+                              <param name="redirectURI" value="#[OU_OIDC_OPENSHIFT_REIDRECT]"/>
+                              <param name="codeLastMileKeyName" value="lastmile-oidc"/>
+                              <param name="authChainName" value="activeDirectory"/>
+                              <param name="accessTokenTimeToLive" value="1200000"/>
+                              <param name="accessTokenSkewMillis" value="1200000"/>
+                              <param name="codeTokenSkewMilis" value="1200000"/>
+                            </trust>
+                        </trusts>
+                    </idp>
+                </url>
+            </urls>
+            <cookieConfig>
+                <sessionCookieName>tremoloSession</sessionCookieName>
+                <domain>#[OU_HOST]</domain>
+                <scope>-1</scope>
+                <logoutURI>/logout</logoutURI>
+                <keyAlias>session-unison</keyAlias>
+                <secure>true</secure>
+                <timeout>900</timeout>
+            </cookieConfig>
+        </application>
+
+  </applications>
+  <myvdConfig>WEB-INF/myvd.conf</myvdConfig>
+  <authMechs>
+    <mechanism name="loginForm">
+      <uri>/auth/formLogin</uri>
+      <className>com.tremolosecurity.proxy.auth.FormLoginAuthMech</className>
+      <init>
+      </init>
+      <params>
+        <param>FORMLOGIN_JSP</param>
+      </params>
+    </mechanism>
+    <mechanism name="anonymous">
+      <uri>/auth/anon</uri>
+      <className>com.tremolosecurity.proxy.auth.AnonAuth</className>
+      <init>
+        <!-- The RDN of unauthenticated users -->
+        <param name="userName" value="uid=Anonymous"/>
+        <!-- Any number of attributes can be added to the anonymous user -->
+        <param name="role" value="Users" />
+      </init>
+      <params>
+      </params>
+    </mechanism>
+    <mechanism name="jit">
+      <uri>/auth/jit</uri>
+      <className>com.tremolosecurity.provisioning.auth.JITAuthMech</className>
+      <init>
+      </init>
+      <params>
+      </params>
+    </mechanism>
+    <mechanism name="map">
+      <uri>/auth/map</uri>
+      <className>com.tremolosecurity.proxy.auth.MappingAuthmech</className>
+      <init>
+      </init>
+    </mechanism>
+  </authMechs>
+  <authChains>
+    <!-- An anonymous authentication chain MUST be level 0 -->
+    <chain name="anon" level="0">
+      <authMech>
+        <name>anonymous</name>
+        <required>required</required>
+        <params>
+        </params>
+      </authMech>
+    </chain>
+    <chain name="formloginFilter" level="1">
+      <authMech>
+        <name>loginForm</name>
+        <required>required</required>
+        <params>
+          <!-- Path to the login form -->
+          <param name="FORMLOGIN_JSP" value="/auth/forms/defaultForm.jsp"/>
+          <!-- Either an attribute name OR an ldap filter mapping the form parameters. If this is an ldap filter, form parameters are identified by ${parameter} -->
+          <param name="uidAttr" value="uid"/>
+          <!-- If true, the user is determined based on an LDAP filter rather than a simple user lookup -->
+          <param name="uidIsFilter" value="false"/>
+        </params>
+      </authMech>
+    </chain>
+    <chain name="activeDirectory" level="20" root="o=Data">
+      <authMech>
+        <name>loginForm</name>
+        <required>required</required>
+        <params>
+          <param name="FORMLOGIN_JSP" value="/auth/forms/defaultForm.jsp"/>
+          <param name="uidAttr" value="uid"/>
+          <param name="uidIsFilter" value="false"/>
+        </params>
+      </authMech>
+      <authMech>
+        <name>map</name>
+        <required>required</required>
+        <params>
+          <param name="map" value="uid=userPrincipalName" />
+          <param name="map" value="mail=mail" />
+        </params>
+      </authMech>
+      <authMech>
+        <name>jit</name>
+        <required>required</required>
+        <params>
+          <param name="nameAttr" value="uid" />
+          <param name="workflowName" value="jitdb" />
+        </params>
+      </authMech>
+    </chain>
+  </authChains>
+  <resultGroups>
+    <!-- The name attribute is how the resultGroup is referenced in the URL -->
+    <resultGroup name="Logout">
+      <!-- Each result should be listed -->
+      <result>
+        <!-- The type of result, one of cookie, header or redirect -->
+        <type>redirect</type>
+        <!-- The source of the result value, one of user, static, custom -->
+        <source>static</source>
+        <!-- Name of the resuler (in this case a cookie) and the value -->
+        <value>/auth/forms/logout.jsp</value>
+      </result>
+    </resultGroup>
+    <!-- The name attribute is how the resultGroup is referenced in the URL -->
+    <resultGroup name="ScaleJSRedirect">
+      <!-- Each result should be listed -->
+      <result>
+        <!-- The type of result, one of cookie, header or redirect -->
+        <type>redirect</type>
+        <!-- The source of the result value, one of user, static, custom -->
+        <source>static</source>
+        <!-- Name of the resuler (in this case a cookie) and the value -->
+        <value>/scale/index.html</value>
+      </result>
+    </resultGroup>
+  </resultGroups>
+  <keyStorePath>/etc/openunison/unisonKeyStore.jks</keyStorePath>
+  <keyStorePassword>#[unisonKeystorePassword]</keyStorePassword>
+  <provisioning>
+    <targets>
+      <target name="jitdb" className="com.tremolosecurity.provisioning.core.providers.BasicDB">
+        <params>
+          <param name="driver" value="#[OU_JDBC_DRIVER]"/>
+          <param name="url" value="#[OU_JDBC_URL]"/>
+          <param name="user" value="#[OU_JDBC_USER]"/>
+          <param name="password" value="#[OU_JDBC_PASSWORD]"/>
+          <param name="maxCons" value="10"/>
+          <param name="maxIdleCons" value="10"/>
+          <param name="validationQuery" value="#[OU_JDBC_VALIDATION]" />
+          <param name="userTable" value="localUsers"/>
+          <param name="userPrimaryKey" value="userId"/>
+          <param name="userName" value="sub"/>
+          <param name="groupMode" value="ManyToMany"/>
+          <param name="groupTable" value="localGroups"/>
+          <param name="groupName" value="name"/>
+          <param name="groupUserKey" value="userId"/>
+          <param name="groupLinkTableName" value="userGroups"/>
+          <param name="groupGroupKey" value="groupId"/>
+          <param name="groupPrimaryKey" value="groupId"/>
+          <param name="userSQL" value=""/>
+          <param name="groupSQL" value=""/>
+          <param name="customProvider" value=""/>
+        </params>
+        <targetAttribute name="sub" source="sub" sourceType="user"/>
+        <targetAttribute name="mail" source="mail" sourceType="user"/>
+        <targetAttribute name="firstName" source="firstName" sourceType="user"/>
+        <targetAttribute name="lastName" source="lastName" sourceType="user"/>
+      </target>
+      <target name="openshift" className="com.tremolosecurity.unison.openshiftv3.OpenShiftTarget">
+          <params>
+              <param name="url" value="#[OPENSHIFT_URL]"/>
+              <param name="userName" value=""/>
+              <param name="password" value=""/>
+              <param name="token" value="#[OPENSHIFT_TOKEN]"/>
+              <param name="useToken" value="true"/>
+          </params>
+      </target>
+
+
+    </targets>
+    <workflows>
+      <workflow  name="jitdb" label="JIT" description="JIT" inList="false" orgid="687da09f-8ec1-48ac-b035-f2f182b9bd1e">
+        <tasks>
+          <customTask className="com.tremolosecurity.provisioning.customTasks.LoadGroups">
+            <param name="nameAttr" value="uid"/>
+          </customTask>
+          <mapping  strict="true">
+            <map>
+              <mapping targetAttributeName="TREMOLO_USER_ID" sourceType="user" targetAttributeSource="uid"/>
+              <mapping targetAttributeName="sub" sourceType="user" targetAttributeSource="uid"/>
+              <mapping targetAttributeName="mail" sourceType="user" targetAttributeSource="mail"/>
+              <mapping targetAttributeName="firstName" sourceType="user" targetAttributeSource="givenName"/>
+              <mapping targetAttributeName="lastName" sourceType="user" targetAttributeSource="sn"/>
+            </map>
+            <onSuccess>
+
+              <addGroup name="users" />
+              <provision sync="true" target="jitdb" setPassword="false" onlyPassedInAttributes="false" >
+                <attributes>
+                  <value>sub</value>
+                  <value>mail</value>
+                  <value>firstName</value>
+                  <value>lastName</value>
+                </attributes>
+              </provision>
+              <resync keepExternalAttrs="false" changeRoot="true" newRoot="o=Tremolo" />
+            </onSuccess>
+          </mapping>
+        </tasks>
+      </workflow>
+      <workflow name="ProjectAdministrators" label="$name$ Administrator" description="$openshift_io/description$" inList="true" orgid="cecae082-c85d-48df-a837-4726bb755180">
+    <dynamicConfiguration dynamic="true" className="com.tremolosecurity.unison.openshiftv3.wf.OpenShiftWorkflows">
+        <param name="target" value="openshift"/>
+        <param name="kind" value="/oapi/v1/projects"/>
+        <param name="filter" value="default" />
+        <param name="filter" value="kube-system" />
+        <param name="filter" value="myproject" />
+        <param name="filter" value="openshift" />
+        <param name="filter" value="openshift-infra" />
+        <param name="filter" value="unison-service" />
+        <param name="filter" value="openunison" />
+    </dynamicConfiguration>
+    <tasks>
+        <customTask className="com.tremolosecurity.provisioning.customTasks.LoadAttributes">
+            <param name="nameAttr" value="uid"/>
+            <param name="name" value="givenname"/>
+            <param name="name" value="sn"/>
+            <param name="name" value="mail"/>
+        </customTask>
+        <approval label="Approve Administrator Access to $name$">
+            <onSuccess>
+                <addGroup name="editors-$name$" remove="false"/>
+                <provision sync="false" target="openshift" setPassword="false" onlyPassedInAttributes="false">
+                    <attributes/>
+                </provision>
+                <notifyUser subject="Admin access to $name$ approved" mailAttrib="mail">
+                    <msg>Your access has been approved, please login</msg>
+                </notifyUser>
+            </onSuccess>
+            <onFailure>
+                <customTask className="com.tremolosecurity.provisioning.customTasks.LoadGroupsFromTarget">
+                    <param name="target" value="openshift"/>
+                    <param name="nameAttr" value="uid"/>
+                </customTask>
+                <addGroup name="editors-$name$" remove="true"/>
+                <provision sync="true" target="openshift" setPassword="false" onlyPassedInAttributes="false">
+                    <attributes/>
+                </provision>
+            </onFailure>
+            <emailTemplate>New open request</emailTemplate>
+            <approvers>
+                <rule scope="group" constraint="cn=approvers-openshift-$name$,ou=groups,ou=shadow,o=Tremolo"/>
+            </approvers>
+            <mailAttr>mail</mailAttr>
+            <failureEmailSubject>Request denied</failureEmailSubject>
+            <failureEmailMsg>for reason:&#xD;
+&#xD;
+${reason}</failureEmailMsg>
+            <escalationPolicy>
+                <escalationFailure action="leave">
+                    <azRules/>
+                </escalationFailure>
+            </escalationPolicy>
+        </approval>
+    </tasks>
+</workflow>
+
+<workflow  name="NewOpenShiftProject" label="New OpenShift Project" description="Creates a new openshift project and associated groups to manage approvals" inList="false" orgid="B158BD40-0C1B-11E3-8FFD-0800200C9A66">
+    <dynamicConfiguration dynamic="false" />
+    <tasks>
+        <customTask className="com.tremolosecurity.provisioning.customTasks.CopyFromUserToRequest">
+            <param name="attribute" value="projectName"/>
+            <param name="keepInUser" value="false"/>
+        </customTask>
+        <customTask className="com.tremolosecurity.provisioning.customTasks.LoadAttributes">
+            <param name="nameAttr" value="uid"/>
+            <param name="name" value="givenname"/>
+            <param name="name" value="sn"/>
+            <param name="name" value="mail"/>
+        </customTask>
+        <approval label="Create New Project - $projectName$">
+            <onSuccess>
+                <customTask className="com.tremolosecurity.provisioning.customTasks.AddGroupToStore">
+                    <param name="target" value="jitdb"/>
+                    <param name="name" value="approvers-openshift-$projectName$"/>
+                    <param name="attributes" value="unison.group.create.sql=INSERT INTO localGroups (name,description) VALUES (?,?)"/>
+                    <param name="attributes" value="unison.group.create.param.2=Approve access to $projectName$" />
+                </customTask>
+                <mapping strict="true">
+                    <onSuccess>
+                        <addGroup name="approvers-openshift-$projectName$" remove="false"/>
+                        <provision sync="false" target="jitdb" setPassword="false" onlyPassedInAttributes="false">
+                            <attributes>
+                              <value>uid</value>
+                            </attributes>
+                        </provision>
+                    </onSuccess>
+                    <onFailure/>
+                    <map>
+                        <mapping targetAttributeName="uid" targetAttributeSource="uid" sourceType="user"/>
+                    </map>
+                </mapping>
+                <customTask className="com.tremolosecurity.provisioning.customTasks.AddGroupToStore">
+                    <param name="target" value="openshift"/>
+                    <param name="name" value="editors-$projectName$"/>
+                </customTask>
+                <customTask className="com.tremolosecurity.provisioning.customTasks.AddGroupToStore">
+                    <param name="target" value="openshift"/>
+                    <param name="name" value="viewer-$projectName$"/>
+                </customTask>
+                <mapping strict="true">
+                    <onSuccess>
+                        <addGroup name="editors-$projectName$" remove="false"/>
+                        <provision sync="false" target="openshift" setPassword="false" onlyPassedInAttributes="false">
+                            <attributes/>
+                        </provision>
+                    </onSuccess>
+                    <onFailure/>
+                    <map>
+                        <mapping targetAttributeName="uid" targetAttributeSource="uid" sourceType="user"/>
+                    </map>
+                </mapping>
+                <customTask className="com.tremolosecurity.unison.openshiftv3.tasks.CreateProject">
+                    <param name="targetName" value="openshift"/>
+                    <param name="template" value="{&quot;kind&quot;:&quot;ProjectRequest&quot;,&quot;apiVersion&quot;:&quot;v1&quot;,&quot;metadata&quot;:{&quot;name&quot;:&quot;$projectName$&quot;,&quot;creationTimestamp&quot;:null}}"/>
+                </customTask>
+                <customTask className="com.tremolosecurity.unison.openshiftv3.tasks.AddGroupToRole">
+                    <param name="targetName" value="openshift"/>
+                    <param name="projectName" value="$projectName$"/>
+                    <param name="groupName" value="editors-$projectName$"/>
+                    <param name="roleName" value="edit"/>
+                </customTask>
+                <customTask className="com.tremolosecurity.unison.openshiftv3.tasks.AddGroupToRole">
+                    <param name="targetName" value="openshift"/>
+                    <param name="projectName" value="$projectName$"/>
+                    <param name="groupName" value="viewer-$projectName$"/>
+                    <param name="roleName" value="view"/>
+                </customTask>
+                <notifyUser subject="Project created" mailAttrib="mail">
+                    <msg>Your project has been created</msg>
+                </notifyUser>
+            </onSuccess>
+            <onFailure/>
+            <emailTemplate>A new project has been requested</emailTemplate>
+            <approvers>
+                <rule scope="group" constraint="cn=administrators,ou=groups,ou=shadow,o=Tremolo"/>
+            </approvers>
+            <mailAttr>mail</mailAttr>
+            <failureEmailSubject>Project not approved</failureEmailSubject>
+            <failureEmailMsg>Because:&#xD;
+&#xD;
+${reason}</failureEmailMsg>
+            <escalationPolicy>
+                <escalationFailure action="leave">
+                    <azRules/>
+                </escalationFailure>
+            </escalationPolicy>
+        </approval>
+    </tasks>
+</workflow>
+
+<workflow name="ClusterAdmin" label="Cluster Administrator" description="Request this role to become a cluster administrator" inList="true" orgid="441a2bf1-3e47-4d40-a994-99faa15f997a">
+    <dynamicConfiguration dynamic="false" className="com.tremolosecurity.provisioning.dynamicwf.LDAPDynaicWorkflows">
+        <param name="descriptionAttribute" value=""/>
+        <param name="approverAttribute" value=""/>
+        <param name="groupNameAttribute" value=""/>
+        <param name="searchFilter" value=""/>
+        <param name="searchBase" value=""/>
+    </dynamicConfiguration>
+    <tasks>
+        <customTask className="com.tremolosecurity.provisioning.customTasks.LoadAttributes">
+            <param name="nameAttr" value="uid"/>
+            <param name="name" value="givenname"/>
+            <param name="name" value="sn"/>
+            <param name="name" value="mail"/>
+        </customTask>
+        <approval label="Approve Access for OpenShift Cluster Administrator">
+            <onSuccess>
+                <addGroup name="cluster-admins" remove="false"/>
+                <provision sync="false" target="openshift" setPassword="false" onlyPassedInAttributes="false">
+                    <attributes/>
+                </provision>
+                <notifyUser subject="Access to Cluster Admin Approved" mailAttrib="mail">
+                    <msg>Your access has been approved.</msg>
+                </notifyUser>
+            </onSuccess>
+            <onFailure>
+                <customTask className="com.tremolosecurity.provisioning.customTasks.LoadGroupsFromTarget">
+                    <param name="nameAttr" value="uid"/>
+                    <param name="target" value="openshift"/>
+                </customTask>
+                <addGroup name="cluster-admins" remove="true"/>
+                <provision sync="true" target="openshift" setPassword="false" onlyPassedInAttributes="false">
+                    <attributes/>
+                </provision>
+            </onFailure>
+            <emailTemplate>There is an open request for cluster administration</emailTemplate>
+            <approvers>
+                <rule scope="group" constraint="cn=administrators,ou=groups,ou=shadow,o=Tremolo"/>
+            </approvers>
+            <mailAttr>mail</mailAttr>
+            <failureEmailSubject>Access Denied</failureEmailSubject>
+            <failureEmailMsg>For this reason:&#xD;
+&#xD;
+${reason}</failureEmailMsg>
+            <escalationPolicy>
+                <escalationFailure action="leave">
+                    <azRules/>
+                </escalationFailure>
+            </escalationPolicy>
+        </approval>
+    </tasks>
+</workflow>
+
+<workflow name="ProjectViewers" label="$name$ Viewer" description="$openshift_io/description$" inList="true" orgid="97137c31-a417-4498-907d-e61f8686eb97">
+    <dynamicConfiguration dynamic="true" className="com.tremolosecurity.unison.openshiftv3.wf.OpenShiftWorkflows">
+        <param name="target" value="openshift"/>
+        <param name="kind" value="/oapi/v1/projects"/>
+        <param name="filter" value="default" />
+        <param name="filter" value="kube-system" />
+        <param name="filter" value="myproject" />
+        <param name="filter" value="openshift" />
+        <param name="filter" value="openshift-infra" />
+        <param name="filter" value="unison-service" />
+        <param name="filter" value="openunison" />
+    </dynamicConfiguration>
+    <tasks>
+        <customTask className="com.tremolosecurity.provisioning.customTasks.LoadAttributes">
+            <param name="nameAttr" value="uid"/>
+            <param name="name" value="givenname"/>
+            <param name="name" value="sn"/>
+            <param name="name" value="mail"/>
+        </customTask>
+        <approval label="Approve Viewer Access to $name$">
+            <onSuccess>
+                <addGroup name="viewer-$name$" remove="false"/>
+                <provision sync="false" target="openshift" setPassword="false" onlyPassedInAttributes="false">
+                    <attributes/>
+                </provision>
+                <notifyUser subject="Viewer access to $name$ approved" mailAttrib="mail">
+                    <msg>Your access has been approved, please login</msg>
+                </notifyUser>
+            </onSuccess>
+            <onFailure>
+                <customTask className="com.tremolosecurity.provisioning.customTasks.LoadGroupsFromTarget">
+                    <param name="target" value="openshift"/>
+                    <param name="nameAttr" value="uid"/>
+                </customTask>
+                <addGroup name="viewer-$name$" remove="true"/>
+                <provision sync="true" target="openshift" setPassword="false" onlyPassedInAttributes="false">
+                    <attributes/>
+                </provision>
+            </onFailure>
+            <emailTemplate>New open request</emailTemplate>
+            <approvers>
+                <rule scope="group" constraint="cn=approvers-openshift-$name$,ou=groups,ou=shadow,o=Tremolo"/>
+            </approvers>
+            <mailAttr>mail</mailAttr>
+            <failureEmailSubject>Request denied</failureEmailSubject>
+            <failureEmailMsg>for reason:&#xD;
+&#xD;
+${reason}</failureEmailMsg>
+            <escalationPolicy>
+                <escalationFailure action="leave">
+                    <azRules/>
+                </escalationFailure>
+            </escalationPolicy>
+        </approval>
+    </tasks>
+</workflow>
+<workflow name="AddApprover" label="Add Approver for $groupName$" description="Add an approver" inList="true" orgid="f9923cb2-fcc3-4ed0-9b87-f99fa4445344">
+    <dynamicConfiguration dynamic="true" className="com.tremolosecurity.provisioning.dynamicwf.LDAPDynaicWorkflows">
+        <param name="descriptionAttribute" value="description"/>
+        <param name="approverAttribute" value="cn"/>
+        <param name="groupNameAttribute" value="cn"/>
+        <param name="searchFilter" value="(&amp;(objectClass=groupOfUniqueNames)(cn=*approver*))"/>
+        <param name="searchBase" value="ou=groups,ou=shadow,o=Tremolo"/>
+    </dynamicConfiguration>
+    <tasks>
+        <customTask className="com.tremolosecurity.provisioning.customTasks.LoadAttributes">
+            <param name="nameAttr" value="uid"/>
+            <param name="name" value="givenname"/>
+            <param name="name" value="sn"/>
+            <param name="name" value="mail"/>
+        </customTask>
+        <approval label="Approve access to $groupName$">
+            <onSuccess>
+                <addGroup name="$groupName$" remove="false"/>
+                <provision sync="false" target="jitdb" setPassword="false" onlyPassedInAttributes="false">
+                    <attributes>
+                        <value>uid</value>
+                    </attributes>
+                </provision>
+                <notifyUser subject="Approval access to $groupName$ approved" mailAttrib="mail">
+                    <msg>Your access has been approved, please login</msg>
+                </notifyUser>
+            </onSuccess>
+            <onFailure>
+                <customTask className="com.tremolosecurity.provisioning.customTasks.LoadGroupsFromTarget">
+                    <param name="target" value="jitdb"/>
+                    <param name="nameAttr" value="uid"/>
+                </customTask>
+                <addGroup name="$groupName$" remove="true"/>
+                <provision sync="true" target="jitdb" setPassword="false" onlyPassedInAttributes="false">
+                    <attributes>
+                        <value>uid</value>
+                    </attributes>
+                </provision>
+            </onFailure>
+            <emailTemplate>New open request</emailTemplate>
+            <approvers>
+                <rule scope="group" constraint="cn=$groupName$,ou=groups,ou=shadow,o=Tremolo"/>
+            </approvers>
+            <mailAttr>mail</mailAttr>
+            <failureEmailSubject>Request denied</failureEmailSubject>
+            <failureEmailMsg>for reason:&#xD;
+&#xD;
+${reason}</failureEmailMsg>
+            <escalationPolicy>
+                <escalationFailure action="leave">
+                    <azRules/>
+                </escalationFailure>
+            </escalationPolicy>
+        </approval>
+    </tasks>
+</workflow>
+
+<workflow name="ManageOpenUnisonAdministrator" label="Add or Remove an OpenUnison administrator" description="Manages the root administrator group for OpenUnison" inList="true" orgid="241f4539-efd9-4e18-8a59-649bf1b79cbe">
+    <dynamicConfiguration dynamic="false"  />
+    <tasks>
+        <customTask className="com.tremolosecurity.provisioning.customTasks.LoadAttributes">
+            <param name="nameAttr" value="uid"/>
+            <param name="name" value="givenname"/>
+            <param name="name" value="sn"/>
+            <param name="name" value="mail"/>
+        </customTask>
+        <approval label="Approve access to OpenUnison Administrator">
+            <onSuccess>
+                <addGroup name="administrators" remove="false"/>
+                <provision sync="false" target="jitdb" setPassword="false" onlyPassedInAttributes="false">
+                    <attributes>
+                        <value>uid</value>
+                    </attributes>
+                </provision>
+                <notifyUser subject="Approval access to OpenUnison administrator approved" mailAttrib="mail">
+                    <msg>Your access has been approved, please login</msg>
+                </notifyUser>
+            </onSuccess>
+            <onFailure>
+                <customTask className="com.tremolosecurity.provisioning.customTasks.LoadGroupsFromTarget">
+                    <param name="target" value="jitdb"/>
+                    <param name="nameAttr" value="uid"/>
+                </customTask>
+                <addGroup name="administrators" remove="true"/>
+                <provision sync="true" target="jitdb" setPassword="false" onlyPassedInAttributes="false">
+                    <attributes>
+                        <value>uid</value>
+                    </attributes>
+                </provision>
+            </onFailure>
+            <emailTemplate>New open request</emailTemplate>
+            <approvers>
+                <rule scope="group" constraint="cn=administrators,ou=groups,ou=shadow,o=Tremolo"/>
+            </approvers>
+            <mailAttr>mail</mailAttr>
+            <failureEmailSubject>Request denied</failureEmailSubject>
+            <failureEmailMsg>for reason:&#xD;
+&#xD;
+${reason}</failureEmailMsg>
+            <escalationPolicy>
+                <escalationFailure action="leave">
+                    <azRules/>
+                </escalationFailure>
+            </escalationPolicy>
+        </approval>
+    </tasks>
+</workflow>
+    </workflows>
+    <approvalDB>
+      <hibernateDialect>#[OU_HIBERNATE_DIALECT]</hibernateDialect>
+      <driver>#[OU_JDBC_DRIVER]</driver>
+      <url>#[OU_JDBC_URL]</url>
+      <user>#[OU_JDBC_USER]</user>
+      <password>#[OU_JDBC_PASSWORD]</password>
+      <maxConns>10</maxConns>
+      <maxIdleConns>10</maxIdleConns>
+      <userIdAttribute>uid</userIdAttribute>
+      <approverAttributes>
+        <value>uid</value>
+        <value>givenname</value>
+        <value>sn</value>
+        <value>mail</value>
+      </approverAttributes>
+      <userAttributes>
+        <value>uid</value>
+        <value>givenname</value>
+        <value>sn</value>
+        <value>mail</value>
+      </userAttributes>
+      <enabled>true</enabled>
+      <smtpHost>#[SMTP_HOST]</smtpHost>
+      <smtpPort>#[SMTP_PORT]</smtpPort>
+      <smtpUser>#[SMTP_USER]</smtpUser>
+      <smtpPassword>#[SMTP_PASSWORD]</smtpPassword>
+      <smtpSubject>Awaiting Approvals</smtpSubject>
+      <smtpFrom>#[SMTP_FROM]</smtpFrom>
+      <smtpTLS>#[SMTP_TLS]</smtpTLS>
+      <encryptionKey>session-unison</encryptionKey>
+      <smtpUseSOCKSProxy>false</smtpUseSOCKSProxy>
+      <smtpSOCKSProxyHost>
+      </smtpSOCKSProxyHost>
+      <smtpSOCKSProxyPort>0</smtpSOCKSProxyPort>
+      <smtpLocalhost>localhost</smtpLocalhost>
+      <validationQuery>#[OU_JDBC_VALIDATION]</validationQuery>
+    </approvalDB>
+    <org name="OpenShift Enterprise" description="OpenShift enterprise deployment" uuid="B158BD40-0C1B-11E3-8FFD-0800200C9A66">
+            <orgs name="Audit Reports" description="List of reports for auditors and admins" uuid="d2f56bce-b0d4-44fa-8c5d-bd600b0bc589">
+                <azRules>
+                    <rule scope="group" constraint="cn=administrators,ou=groups,ou=shadow,o=Tremolo"/>
+                </azRules>
+            </orgs>
+            <orgs name="OpenShift Project Administrators" description="List of projects that can be requested for administration rights" uuid="cecae082-c85d-48df-a837-4726bb755180">
+                <azRules>
+                    <rule scope="dn" constraint="o=Tremolo"/>
+                </azRules>
+            </orgs>
+            <orgs name="OpenShift Administration" description="Request access for managing openshift clusters" uuid="441a2bf1-3e47-4d40-a994-99faa15f997a">
+                <azRules>
+                    <rule scope="dn" constraint="o=Tremolo"/>
+                </azRules>
+            </orgs>
+            <orgs name="OpenShift Project Viewers" description="Read only access to OpenShift projects" uuid="97137c31-a417-4498-907d-e61f8686eb97">
+                <azRules>
+                    <rule scope="dn" constraint="o=Tremolo"/>
+                </azRules>
+            </orgs>
+            <orgs name="Approvers" description="List of approver groups.  To add a user to an approver group, request the access for the user to add with an existing approver." uuid="f9923cb2-fcc3-4ed0-9b87-f99fa4445344">
+                <azRules>
+                    <rule scope="filter" constraint="(groups=OpenUnison - approvers-*)"/>
+                </azRules>
+            </orgs>
+            <orgs name="OpenUnison Administrators and Approvers" description="Manage access to the root administration and approval group" uuid="241f4539-efd9-4e18-8a59-649bf1b79cbe">
+              <azRules>
+                <rule scope="group" constraint="cn=administrators,ou=groups,ou=shadow,o=Tremolo" />
+              </azRules>
+            </orgs>
+
+            <azRules/>
+        </org>
+        <queueConfig isUseInternalQueue="true" maxProducers="1" connectionFactory="com.tremolosecurity.provisioning.jms.providers.AwsSqsConnectionFactory" maxConsumers="1" taskQueueName="TremoloUnisonTaskQueue" smtpQueueName="TremoloUnisonSMTPQueue" encryptionKeyName="session-unison"/>
+        <portal>
+
+            <urls label="OpenShift Console" url="#[OPENSHIFT_CONSOLE_URL]" name="OpenShift" org="B158BD40-0C1B-11E3-8FFD-0800200C9A66" icon="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">
+                <azRules>
+                    <rule scope="dn" constraint="o=Tremolo"/>
+                </azRules>
+            </urls>
+            <urls label="New OpenShift Project" url="/newproject/index.html" name="NewOpenShiftProject" org="B158BD40-0C1B-11E3-8FFD-0800200C9A66" icon="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&#xA;yP8Ha4nnlW9lJ3YAAAAASUVORK5CYII=">
+                <azRules>
+                    <rule scope="dn" constraint="o=Tremolo"/>
+                </azRules>
+            </urls>
+        </portal>
+        <scheduler useDB="false" threadCount="3" instanceLabel="local" instanceIPMask="172.">
+            <scheduleDB delegateClassName="org.quartz.impl.jdbcjobstore.CUBRIDDelegate" driver="com.mysql.fabric.jdbc.FabricMySQLDriver" url="" user="demo" password="demo" maxConnections="0" validationQuery=""/>
+            <job className="com.tremolosecurity.provisioning.scheduler.jobs.UpdateApprovalAz" name="resetAllowedApprovers" group="management">
+            <!-- When to run the job -->
+          	<cronSchedule
+          		seconds="0"
+          		minutes="*"
+          		hours="*"
+          		dayOfMonth="*"
+          		month="*"
+          		dayOfWeek="?"
+          		year="*"
+          	/>
+          	<param name="queueName" value="rebaseQueue" />
+          </job>
+          <job className="com.tremolosecurity.provisioning.scheduler.jobs.RemindApprovers" name="remindAppovers" group="management">
+          	<cronSchedule
+          		seconds="0"
+          		minutes="0"
+          		hours="9"
+          		dayOfMonth="*"
+          		month="*"
+          		dayOfWeek="?"
+          		year="*"
+          	/>
+
+            <!-- The template for the message to send to the approvers. Use %L to represent the label of the workflow that is open and %D to represent the number of days open	-->
+            <param name="message" value="The request %L has been open for %D days, please login to act on this request" />
+            <!-- The number of days an approval request should be open before sending a reminder	-->
+            <param name="days" value="7" />
+            <!-- The name of the attribute that has the user's email address	-->
+            <param name="mailAttributeName" value="mail" />
+          </job>
+        </scheduler>
+        <listeners>
+          <listener className="com.tremolosecurity.provisioning.listeners.UpdateApprovalAZListener" queueName="rebaseQueue"></listener>
+        </listeners>
+        <reports>
+            <report orgID="B158BD40-0C1B-11E3-8FFD-0800200C9A66" name="My Open Requests" description="List of your currently open requests and the approvers responsible for acting on them" groupBy="id" groupings="true">
+                <paramater>currentUser</paramater>
+                <sql>select  approvals.id,approvals.label AS Approval ,approvals.createTS AS `Approval Opened`,workflows.name AS `Workflow Name`,workflows.label AS `Workflow Label`,workflows.requestReason AS `Request Reason`, concat((SELECT value FROM userAttributes WHERE userAttributes.name='givenname' AND userid=users.id),' ',(SELECT value FROM userAttributes WHERE userAttributes.name='sn' AND userid=users.id)) as `Subject Name`, (SELECT value FROM userAttributes WHERE name='mail' AND userid=users.id) as `Subject Email`, (SELECT value FROM approverAttributes WHERE name='givenname' AND approverid=approvers.id) as `First Name`,(SELECT value FROM approverAttributes WHERE name='sn' AND approverid=approvers.id) as `Last Name`,(SELECT value FROM approverAttributes WHERE name='mail' AND approverid=approvers.id) as `Email`  from approvals inner join workflows on approvals.workflow=workflows.id inner join users on workflows.userid=users.id inner join allowedApprovers on approvals.id=allowedApprovers.approval inner join approvers on approvers.id=allowedApprovers.approver where users.userKey=? AND approvedTS is null order by approvals.createTS ASC, approvals.id ASC</sql>
+                <headerFields>Approval</headerFields>
+                <headerFields>Subject Name</headerFields>
+                <headerFields>Subject Email</headerFields>
+                <headerFields>Workflow Name</headerFields>
+                <headerFields>Workflow Label</headerFields>
+                <headerFields>Request Reason</headerFields>
+                <dataFields>First Name</dataFields>
+                <dataFields>Last Name</dataFields>
+                <dataFields>Email</dataFields>
+            </report>
+            <report orgID="B158BD40-0C1B-11E3-8FFD-0800200C9A66" name="Approvals Completed by Me" description="All approvals you approved or denied" groupBy="wid" groupings="false">
+                <paramater>currentUser</paramater>
+                <sql>select  workflows.id AS wid, approvals.id AS aid,approvals.label AS Approval ,approvals.createTS AS `Approval Opened`,workflows.name AS `Workflow Name`,workflows.label AS `Workflow Label`,workflows.requestReason AS `Request Reason`, concat((SELECT value FROM userAttributes WHERE name='givenname' AND userid=users.id),' ',(SELECT value FROM userAttributes WHERE name='sn' AND userid=users.id)) as `Subject Name`, (SELECT value FROM userAttributes WHERE name='mail' AND userid=users.id) as `Subject Email`, (SELECT value FROM approverAttributes WHERE name='givenname' AND approverid=approvers.id) as `First Name`,(SELECT value FROM approverAttributes WHERE name='sn' AND approverid=approvers.id) as `Last Name`,(SELECT value FROM approverAttributes WHERE name='mail' AND approverid=approvers.id) as `Email`,IF(approvals.approved = 1, 'Approved', 'Rejected') AS `Approval Result`,approvals.approvedTS AS `Approved Date`,approvals.reason AS Reason from approvals inner join approvers on approvals.approver=approvers.id inner join workflows on workflows.id=approvals.workflow inner join users on users.id=workflows.userid WHERE approvers.userKey=? order by approvals.approvedTS DESC; </sql>
+                <dataFields>Workflow Name</dataFields>
+                <dataFields>Workflow Label</dataFields>
+                <dataFields>Subject Name</dataFields>
+                <dataFields>Subject Email</dataFields>
+                <dataFields>Request Reason</dataFields>
+                <dataFields>Approval</dataFields>
+                <dataFields>Approval Result</dataFields>
+                <dataFields>Approved Date</dataFields>
+            </report>
+            <report orgID="d2f56bce-b0d4-44fa-8c5d-bd600b0bc589" name="Open Approvals" description="Lists all of the approvals that are currently waiting action" groupBy="id" groupings="true">
+                <sql>select&#xD;
+&#xD;
+approvals.id,approvals.label AS Approval ,approvals.createTS AS `Approval Opened`,workflows.name AS `Workflow Name`,workflows.label AS `Workflow Label`,workflows.requestReason AS `Request Reason`,&#xD;
+concat((SELECT value FROM userAttributes WHERE name='givenname' AND userid=users.id),' ',(SELECT value FROM userAttributes WHERE name='sn' AND userid=users.id)) as `Subject Name`, (SELECT value FROM userAttributes WHERE name='mail' AND userid=users.id) as `Subject Email`,&#xD;
+(SELECT value FROM approverAttributes WHERE name='givenname' AND approverid=approvers.id) as `First Name`,(SELECT value FROM approverAttributes WHERE name='sn' AND approverid=approvers.id) as `Last Name`,(SELECT value FROM approverAttributes WHERE name='mail' AND approverid=approvers.id) as `Email`&#xD;
+&#xD;
+from approvals inner join workflows on approvals.workflow=workflows.id inner join users on workflows.userid=users.id inner join allowedApprovers on approvals.id=allowedApprovers.approval inner join approvers on approvers.id=allowedApprovers.approver where approvedTS is null&#xD;
+order by approvals.createTS ASC, approvals.id ASC</sql>
+                <headerFields>Approval</headerFields>
+                <headerFields>Subject Name</headerFields>
+                <headerFields>Subject Email</headerFields>
+                <headerFields>Workflow Name</headerFields>
+                <headerFields>Workflow Label</headerFields>
+                <headerFields>Request Reason</headerFields>
+                <dataFields>First Name</dataFields>
+                <dataFields>Last Name</dataFields>
+                <dataFields>Email</dataFields>
+            </report>
+            <report orgID="d2f56bce-b0d4-44fa-8c5d-bd600b0bc589" name="Completed Approvals" description="All approvals completed in a given set of dates" groupBy="wid" groupings="true">
+                <paramater>beginDate</paramater>
+                <paramater>endDate</paramater>
+                <sql>select &#xD;
+workflows.id AS wid, approvals.id AS aid,approvals.label AS Approval ,approvals.createTS AS `Approval Opened`,workflows.name AS `Workflow Name`,workflows.label AS `Workflow Label`,workflows.requestReason AS `Request Reason`,&#xD;
+concat((SELECT value FROM userAttributes WHERE name='givenname' AND userid=users.id),' ',(SELECT value FROM userAttributes WHERE name='sn' AND userid=users.id)) as `Subject Name`, (SELECT value FROM userAttributes WHERE name='mail' AND userid=users.id) as `Subject Email`,&#xD;
+(SELECT value FROM approverAttributes WHERE name='givenname' AND approverid=approvers.id) as `First Name`,(SELECT value FROM approverAttributes WHERE name='sn' AND approverid=approvers.id) as `Last Name`,(SELECT value FROM approverAttributes WHERE name='mail' AND approverid=approvers.id) as `Email`,IF(approvals.approved = 1, 'Approved', 'Rejected') AS `Approval Result`,approvals.approvedTS AS `Approved Date`,approvals.reason AS Reason&#xD;
+from approvals inner join approvers on approvals.approver=approvers.id inner join workflows on workflows.id=approvals.workflow inner join users on users.id=workflows.userid WHERE approvals.approvedTS &gt;= ? AND approvals.approvedTS &lt;= ? order by approvals.id ASC,workflows.id ASC;&#xD;
+</sql>
+                <headerFields>Workflow Name</headerFields>
+                <headerFields>Workflow Label</headerFields>
+                <headerFields>Subject Name</headerFields>
+                <headerFields>Subject Email</headerFields>
+                <headerFields>Request Reason</headerFields>
+                <dataFields>Approval</dataFields>
+                <dataFields>First Name</dataFields>
+                <dataFields>Last Name</dataFields>
+                <dataFields>Email</dataFields>
+                <dataFields>Approval Result</dataFields>
+            </report>
+            <report orgID="d2f56bce-b0d4-44fa-8c5d-bd600b0bc589" name="Single User Change Log" description="All changes to the chosen user" groupBy="id" groupings="true">
+                <paramater>userKey</paramater>
+                <sql>select&#xD;
+(SELECT value FROM userAttributes WHERE userAttributes.name='givenname' AND userid=users.id) AS `First Name`, (SELECT value FROM userAttributes WHERE userAttributes.name='sn' AND userid=users.id) AS `Last Name`, (SELECT value FROM userAttributes WHERE userAttributes.name='mail' AND userid=users.id) AS `Email Address` ,workflows.id,&#xD;
+workflows.name as `Workflow Name`,workflows.label AS `Workflow Label`,workflows.startTS AS `Workflow Started`,workflows.completeTS AS `Workflow Completed`,workflows.requestReason AS `Request Reason`,&#xD;
+auditLogType.name  AS `Action`,CASE WHEN isEntry = 1 THEN 'Object' ELSE 'Attribute' END AS `Target Type`,auditLogs.attribute AS `Name`,auditLogs.val AS `Value`&#xD;
+&#xD;
+&#xD;
+ from users inner join auditLogs on users.id=auditLogs.userid inner join auditLogType on auditLogType.id=auditLogs.actionType inner join workflows on workflows.id=auditLogs.workflow where users.userKey=?&#xD;
+ order by workflows.completeTS ASC ,workflows.id ASC , auditLogs.isEntry DESC</sql>
+                <headerFields>Workflow Name</headerFields>
+                <headerFields>Workflow Label</headerFields>
+                <headerFields>Request Reason</headerFields>
+                <headerFields>Workflow Started</headerFields>
+                <headerFields>Workflow Completed</headerFields>
+                <headerFields>First Name</headerFields>
+                <headerFields>Last Name</headerFields>
+                <headerFields>Email Address</headerFields>
+                <dataFields>Action</dataFields>
+                <dataFields>Target Type</dataFields>
+                <dataFields>Name</dataFields>
+                <dataFields>Value</dataFields>
+            </report>
+            <report orgID="d2f56bce-b0d4-44fa-8c5d-bd600b0bc589" name="Change Log for Period" description="Changes to all users between the two selected dates" groupBy="id" groupings="true">
+                <paramater>beginDate</paramater>
+                <paramater>endDate</paramater>
+                <sql>select&#xD;
+(SELECT value FROM userAttributes WHERE name='givenname' AND userid=users.id) AS `First Name`, (SELECT value FROM userAttributes WHERE name='sn' AND userid=users.id) AS `Last Name`, (SELECT value FROM userAttributes WHERE name='mail' AND userid=users.id) AS `Email Address` ,workflows.id,&#xD;
+workflows.name as `Workflow Name`,workflows.label AS `Workflow Label`,workflows.startTS AS `Workflow Started`,workflows.completeTS AS `Workflow Completed`,workflows.requestReason AS `Request Reason`,&#xD;
+auditLogType.name  AS `Action`,CASE WHEN isEntry = 1 THEN 'Object' ELSE 'Attribute' END AS `Target Type`,auditLogs.attribute AS `Name`,auditLogs.val AS `Value`&#xD;
+&#xD;
+&#xD;
+ from users inner join auditLogs on users.id=auditLogs.userid inner join auditLogType on auditLogType.id=auditLogs.actionType inner join workflows on workflows.id=auditLogs.workflow where workflows.completeTS &gt;= ? and workflows.completeTS &lt;= ?&#xD;
+ order by workflows.completeTS ASC ,workflows.id ASC , auditLogs.isEntry DESC</sql>
+                <headerFields>Workflow Name</headerFields>
+                <headerFields>Workflow Label</headerFields>
+                <headerFields>Request Reason</headerFields>
+                <headerFields>Workflow Started</headerFields>
+                <headerFields>Workflow Completed</headerFields>
+                <headerFields>First Name</headerFields>
+                <headerFields>Last Name</headerFields>
+                <headerFields>Email Address</headerFields>
+                <dataFields>Action</dataFields>
+                <dataFields>Target Type</dataFields>
+                <dataFields>Name</dataFields>
+                <dataFields>Value</dataFields>
+            </report>
+        </reports>
+
+
+  </provisioning>
+  </tremoloConfig>
