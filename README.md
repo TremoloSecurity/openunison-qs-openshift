@@ -10,7 +10,7 @@ This quick start for OpenUnison is designed to provide an identity management hu
 
 The quick start can run inside of OpenShift, leveraging OpenShift for scalability and secret management.  It can also be run externally to OpenShift.  
 
-![OpenShift Identity Manager Architecture](imgs/openunison_qs_openshift.png)
+![OpenShift Identity Manager Architecture](imgs/openunison_qs_ficam.png)
 
 The OpenUnison deployment stores all OpenShift access information as a group in OpenShift, as opposed to a group in an external directory.  The only groups stored outside of OpenShift are approval groups which are stored in the relational database.
 

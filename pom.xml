@@ -10,7 +10,7 @@
   <repositories>
     <repository>
       <id>Tremolo Security</id>
-      <url>https://www.tremolosecurity.com/nexus/content/repositories/releases/</url>
+      <url>https://www.tremolosecurity.com/nexus/content/repositories/betas/</url>
     </repository>
   </repositories>
   <dependencies>
