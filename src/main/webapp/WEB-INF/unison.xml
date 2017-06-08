@@ -3,9 +3,31 @@
   <applications openSessionCookieName="openSession" openSessionTimeout="9000">
     <application name="scale" azTimeoutMillis="30000" >
       <urls>
+        <url regex="false" authChain="sslClientAuth" overrideHost="true" overrideReferer="true">
+          <host>#[OU_HOST]</host>
+          <filterChain>
+            <filter class="com.tremolosecurity.prelude.filters.CompleteLogin" />
+          </filterChain>
+          <uri>/login/piv</uri>
+          <results></results>
+          <azRules>
+            <rule scope="dn" constraint="o=Tremolo" />
+          </azRules>
+        </url>
+        <url regex="false" authChain="activeDirectory" overrideHost="true" overrideReferer="true">
+          <host>#[OU_HOST]</host>
+          <filterChain>
+            <filter class="com.tremolosecurity.prelude.filters.CompleteLogin" />
+          </filterChain>
+          <uri>/login/form</uri>
+          <results></results>
+          <azRules>
+            <rule scope="dn" constraint="o=Tremolo" />
+          </azRules>
+        </url>
         <!-- The regex attribute defines if the proxyTo tag should be interpreted with a regex or not -->
         <!-- The authChain attribute should be the name of an authChain -->
-        <url regex="false" authChain="activeDirectory" overrideHost="true" overrideReferer="true">
+        <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
           <!-- Any number of host tags may be specified to allow for an application to work on multiple hosts.  Additionally an asterick (*) can be specified to make this URL available for ALL hosts -->
           <host>#[OU_HOST]</host>
           <!-- The filterChain allows for transformations of the request such as manipulating attributes and injecting headers -->
@@ -34,7 +56,7 @@
             <rule scope="dn" constraint="o=Tremolo" />
           </azRules>
         </url>
-        <url regex="false" authChain="activeDirectory" overrideHost="true" overrideReferer="true">
+        <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
           <!-- Any number of host tags may be specified to allow for an application to work on multiple hosts.  Additionally an asterick (*) can be specified to make this URL available for ALL hosts -->
           <host>#[OU_HOST]</host>
           <!-- The filterChain allows for transformations of the request such as manipulating attributes and injecting headers -->
@@ -60,7 +82,7 @@
             <rule scope="dn" constraint="o=Tremolo" />
           </azRules>
         </url>
-        <url regex="false" authChain="activeDirectory" overrideHost="true" overrideReferer="true">
+        <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
           <host>#[OU_HOST]</host>
           <filterChain>
             <filter class="com.tremolosecurity.proxy.filters.RemovePrefix">
@@ -80,7 +102,7 @@
             <rule scope="dn" constraint="o=Tremolo" />
           </azRules>
         </url>
-        <url regex="false" authChain="activeDirectory" overrideHost="true" overrideReferer="true">
+        <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
           <host>#[OU_HOST]</host>
           <filterChain>
             <filter class="com.tremolosecurity.scalejs.ws.ScaleMain">
@@ -129,7 +151,7 @@
             <rule scope="dn" constraint="o=Tremolo" />
           </azRules>
         </url>
-        <url regex="false" authChain="activeDirectory" overrideHost="false" overrideReferer="false">
+        <url regex="false" authChain="LoginService" overrideHost="false" overrideReferer="false">
                     <host>#[OU_HOST]</host>
                     <filterChain>
                         <filter class="com.tremolosecurity.scalejs.register.ws.ScaleRegister">
@@ -173,7 +195,7 @@
                         <rule scope="dn" constraint="o=Tremolo"/>
                     </azRules>
                 </url>
-                <url regex="false" authChain="activeDirectory" overrideHost="false" overrideReferer="false">
+                <url regex="false" authChain="LoginService" overrideHost="false" overrideReferer="false">
                     <host>#[OU_HOST]</host>
                     <filterChain>
                       <filter class="com.tremolosecurity.proxy.filters.RemovePrefix">
@@ -292,6 +314,37 @@
         <scope>-1</scope>
       </cookieConfig>
     </application>
+    <application name="TestPIV" azTimeoutMillis="30000" >
+      <urls>
+        <url regex="false" authChain="sslClientAuth" overrideHost="true" overrideReferer="true">
+          <host>#[OU_HOST]</host>
+          <filterChain>
+            <filter class="com.tremolosecurity.prelude.filters.LoginTest">
+              <param name="logoutURI" value="/logout"/>
+
+            </filter>
+          </filterChain>
+          <uri>/testpiv</uri>
+          <results>
+            <azSuccess>
+            </azSuccess>
+          </results>
+          <azRules>
+            <rule scope="filter" constraint="(objectClass=*)" />
+          </azRules>
+        </url>
+
+      </urls>
+      <cookieConfig>
+        <sessionCookieName>testpiv</sessionCookieName>
+        <domain>#[OU_HOST]</domain>
+        <logoutURI>/logout</logoutURI>
+        <keyAlias>session-unison</keyAlias>
+        <secure>false</secure>
+        <timeout>true</timeout>
+        <scope>-1</scope>
+      </cookieConfig>
+    </application>
     <application name="OpenShiftIdP" isApp="false" azTimeoutMillis="30000">
             <results/>
             <urls>
@@ -389,6 +442,22 @@
       <init>
       </init>
     </mechanism>
+    <mechanism name="sslCert">
+  <uri>/auth/ssl</uri>
+  <className>com.tremolosecurity.proxy.auth.CertAuth</className>
+  <init>
+    <param name="crl.names" value=""/>
+    <param name="extracts" value="com.tremolosecurity.proxy.auth.ssl.util.UpnExtractor" />
+  </init>
+  <params></params>
+</mechanism>
+<mechanism name="LoginService">
+  <uri>/auth/loginService</uri>
+  <className>com.tremolosecurity.proxy.auth.LoginService</className>
+  <init>
+  </init>
+  <params></params>
+</mechanism>
   </authMechs>
   <authChains>
     <!-- An anonymous authentication chain MUST be level 0 -->
@@ -441,6 +510,58 @@
         </params>
       </authMech>
     </chain>
+    <chain name="sslClientAuth" level="40" root="o=Data">
+      <authMech>
+        <name>sslCert</name>
+        <required>required</required>
+        <params>
+          <!-- Either an attribute name OR an ldap filter mapping the certificate dn components. If this is an ldap filter, dn components are identified by ${component} -->
+          <param name="uidAttr" value="(userPrincipalName=${userPrincipalName})" />
+          <!-- If the UID Attribute is a filter or just an attribute name   -->
+          <param name="uidIsFilter" value="true"/>
+          <!-- A list of attributes in the certificate subject, or subject alternative names, that will be the RDN of an unmatched entry. -->
+          <param name="rdnAttribute" value="rfc822Name" />
+          <!-- The object class to use for objects created because the user doesn’t exist in the directory -->
+          <param name="defaultOC" value="inetOrgPerson" />
+
+          <!-- The ou component of the DN to use for users not matched. For instance if SSL is specified the user’s dn would be uid=user,ou=SSL,o=Tremolo -->
+          <param name="dnLabel" value="ou=CertAuth"/>
+
+          <!-- List of DN’s of trusted certificates that the chain will accept -->
+          <param name="issuer" value="OU=Entrust Managed Services SSP CA, OU=Certification Authorities, O=Entrust, C=US"/>
+        </params>
+      </authMech>
+      <authMech>
+        <name>map</name>
+        <required>required</required>
+        <params>
+          <param name="map" value="uid=userPrincipalName" />
+          <param name="map" value="mail=mail" />
+        </params>
+      </authMech>
+      <authMech>
+        <name>jit</name>
+        <required>required</required>
+        <params>
+          <param name="nameAttr" value="uid" />
+          <param name="workflowName" value="jitdb" />
+        </params>
+      </authMech>
+    </chain>
+    <chain level="20" name="LoginService">
+    <authMech>
+      <name>LoginService</name>
+      <required>required</required>
+      <params>
+        <param name="chains" value="PIV=/login/piv" />
+        <param name="chains" value="Username and Password=/login/form" />
+        <param name="serviceUrl" value="/auth/forms/chooseLogin.jsp" />
+        <param name="cookieName" value="tremoloLoginChoice"/>
+        <param name="cookieDays" value="30" />
+      </params>
+    </authMech>
+  </chain>
+
   </authChains>
   <resultGroups>
     <!-- The name attribute is how the resultGroup is referenced in the URL -->
