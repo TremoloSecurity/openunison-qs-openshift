@@ -12,3 +12,4 @@ buildNumber.properties
 .project
 .settings/
 .tern-project
+.DS_Store

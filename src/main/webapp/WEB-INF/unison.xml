@@ -9,7 +9,10 @@
             <filter class="com.tremolosecurity.prelude.filters.CompleteLogin" />
           </filterChain>
           <uri>/login/piv</uri>
-          <results></results>
+          <results>
+            <auFail>Default Login Failure</auFail>
+            <azFail>Default Login Failure</azFail>
+          </results>
           <azRules>
             <rule scope="dn" constraint="o=Tremolo" />
           </azRules>
@@ -20,7 +23,10 @@
             <filter class="com.tremolosecurity.prelude.filters.CompleteLogin" />
           </filterChain>
           <uri>/login/form</uri>
-          <results></results>
+          <results>
+            <auFail>Default Login Failure</auFail>
+            <azFail>Default Login Failure</azFail>
+          </results>
           <azRules>
             <rule scope="dn" constraint="o=Tremolo" />
           </azRules>
@@ -44,6 +50,8 @@
           <!-- List the various results that should happen -->
           <results>
             <azSuccess>ScaleJSRedirect</azSuccess>
+            <auFail>Default Login Failure</auFail>
+            <azFail>Default Login Failure</azFail>
           </results>
           <!-- Determine if the currently logged in user may access the resource.  If ANY rule succeeds, the authorization succeeds.
           The scope may be one of group, dn, filter, dynamicGroup or custom
@@ -82,7 +90,7 @@
             <rule scope="dn" constraint="o=Tremolo" />
           </azRules>
         </url>
-        <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
+        <!-- <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
           <host>#[OU_HOST]</host>
           <filterChain>
             <filter class="com.tremolosecurity.proxy.filters.RemovePrefix">
@@ -91,7 +99,24 @@
             </filter>
           </filterChain>
           <uri>/scale</uri>
-          <proxyTo>https://cdn.rawgit.com/TremoloSecurity/OpenUnison/1.0.11/unison/unison-scalejs-main/src/main/html${trimmedURI}</proxyTo>
+          <proxyTo>https://cdn.rawgit.com/TremoloSecurity/OpenUnison/1.0.12/unison/unison-scalejs-main/src/main/html${trimmedURI}</proxyTo>
+          <results>
+            <azSuccess>
+            </azSuccess>
+            <auFail>Default Login Failure</auFail>
+            <azFail>Default Login Failure</azFail>
+          </results>
+          <azRules>
+            <rule scope="dn" constraint="o=Tremolo" />
+          </azRules>
+        </url> -->
+        <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
+          <host>#[OU_HOST]</host>
+          <filterChain>
+
+          </filterChain>
+          <uri>/scale</uri>
+
           <results>
             <azSuccess>
             </azSuccess>
@@ -195,7 +220,7 @@
                         <rule scope="dn" constraint="o=Tremolo"/>
                     </azRules>
                 </url>
-                <url regex="false" authChain="LoginService" overrideHost="false" overrideReferer="false">
+                <!-- <url regex="false" authChain="LoginService" overrideHost="false" overrideReferer="false">
                     <host>#[OU_HOST]</host>
                     <filterChain>
                       <filter class="com.tremolosecurity.proxy.filters.RemovePrefix">
@@ -204,7 +229,25 @@
                       </filter>
                     </filterChain>
                     <uri>/newproject</uri>
-                    <proxyTo>https://cdn.rawgit.com/TremoloSecurity/OpenUnison/1.0.11/unison/unison-scalejs-register/src/main/html${trimmedURI}</proxyTo>
+                    <proxyTo>https://cdn.rawgit.com/TremoloSecurity/OpenUnison/1.0.12/unison/unison-scalejs-register/src/main/html${trimmedURI}</proxyTo>
+                    <results>
+                        <auSuccess></auSuccess>
+                        <auFail>Default Login Failure</auFail>
+                        <azSuccess></azSuccess>
+                        <azFail>PrivilegedRequest</azFail>
+                    </results>
+                    <azRules>
+                        <rule scope="dn" constraint="o=Tremolo"/>
+                    </azRules>
+                </url> -->
+
+                <url regex="false" authChain="LoginService" overrideHost="false" overrideReferer="false">
+                    <host>#[OU_HOST]</host>
+                    <filterChain>
+
+                    </filterChain>
+                    <uri>/newproject</uri>
+
                     <results>
                         <auSuccess></auSuccess>
                         <auFail>Default Login Failure</auFail>
@@ -215,8 +258,6 @@
                         <rule scope="dn" constraint="o=Tremolo"/>
                     </azRules>
                 </url>
-
-
 
       </urls>
       <!-- The cookie configuration determines how sessions are managed for this application -->
@@ -384,7 +425,7 @@
                               <param name="clientSecret" value="#[OU_OIDC_OPENSHIFT_SECRET]"/>
                               <param name="redirectURI" value="#[OU_OIDC_OPENSHIFT_REIDRECT]"/>
                               <param name="codeLastMileKeyName" value="lastmile-oidc"/>
-                              <param name="authChainName" value="activeDirectory"/>
+                              <param name="authChainName" value="LoginService"/>
                               <param name="accessTokenTimeToLive" value="1200000"/>
                               <param name="accessTokenSkewMillis" value="1200000"/>
                               <param name="codeTokenSkewMilis" value="1200000"/>
@@ -458,6 +499,14 @@
   </init>
   <params></params>
 </mechanism>
+<mechanism name="acknowledge">
+  <uri>/auth/acknowledge</uri>
+  <className>com.tremolosecurity.proxy.auth.AcknowledgeAuthMech</className>
+  <init>
+  </init>
+  <params>
+  </params>
+</mechanism>
   </authMechs>
   <authChains>
     <!-- An anonymous authentication chain MUST be level 0 -->
@@ -493,6 +542,16 @@
           <param name="uidIsFilter" value="false"/>
         </params>
       </authMech>
+      <authMech>
+    <name>acknowledge</name>
+    <required>required</required>
+    <params>
+      <!-- The URI for the jsp page to host the banner and request acknowledgement   -->
+      <param name="loginJSP" value="/auth/forms/acknowledge.jsp"/>
+      <!-- The text of the banner, may be HTML  -->
+      <param name="banner" value="I acknowledge that I shall do no harm and I do not own this system.  If I do harm I understand that gremlins will be fed after midnight and released into my data center and github repo."/>
+    </params>
+  </authMech>
       <authMech>
         <name>map</name>
         <required>required</required>
@@ -531,6 +590,16 @@
           <param name="issuer" value="OU=Entrust Managed Services SSP CA, OU=Certification Authorities, O=Entrust, C=US"/>
         </params>
       </authMech>
+      <authMech>
+    <name>acknowledge</name>
+    <required>required</required>
+    <params>
+      <!-- The URI for the jsp page to host the banner and request acknowledgement   -->
+      <param name="loginJSP" value="/auth/forms/acknowledge.jsp"/>
+      <!-- The text of the banner, may be HTML  -->
+      <param name="banner" value="I acknowledge that I shall do no harm and I do not own this system.  If I do harm I understand that gremlins will be fed after midnight and released into my data center and github repo."/>
+    </params>
+  </authMech>
       <authMech>
         <name>map</name>
         <required>required</required>
@@ -586,6 +655,13 @@
         <source>static</source>
         <!-- Name of the resuler (in this case a cookie) and the value -->
         <value>/scale/index.html</value>
+      </result>
+    </resultGroup>
+    <resultGroup name="Default Login Failure">
+      <result>
+        <type>redirect</type>
+        <source>static</source>
+        <value>/auth/forms/defaultFailedLogin.jsp</value>
       </result>
     </resultGroup>
   </resultGroups>
