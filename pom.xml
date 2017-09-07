@@ -2,10 +2,10 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.openunison</groupId>
-  <artifactId>openunison-passwordreset-activedirectory</artifactId>
+  <artifactId>openunison-openshift-idm</artifactId>
   <packaging>war</packaging>
-  <version>1.0-SNAPSHOT</version>
-  <name>openunison-passwordreset-activedirectory Maven Webapp</name>
+  <version>1.0.12.beta</version>
+  <name>openunison-openshift-idm</name>
   <url>http://openunison.io</url>
   <repositories>
     <repository>
