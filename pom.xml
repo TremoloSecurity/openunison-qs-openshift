@@ -17,14 +17,14 @@
     <dependency>
       <groupId>com.tremolosecurity.unison</groupId>
       <artifactId>open-unison-webapp</artifactId>
-      <version>1.0.12</version>
+      <version>1.0.12.beta</version>
       <type>war</type>
       <scope>runtime</scope>
     </dependency>
     <dependency>
       <groupId>com.tremolosecurity.unison</groupId>
       <artifactId>open-unison-webapp</artifactId>
-      <version>1.0.12</version>
+      <version>1.0.12.beta</version>
       <type>pom</type>
     </dependency>
     <dependency>
