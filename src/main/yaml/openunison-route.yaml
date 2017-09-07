@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Route
+metadata:
+  name: openunison-route
+spec:
+  host: openunison.demo.aws
+  to:
+    kind: Service
+    name: openunison
+  tls:
+    termination: passthrough

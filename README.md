@@ -39,9 +39,7 @@ The deployment model assumes:
 
 These instructions cover using the Source-to-Image created by Tremolo Security for OpenUnison, but can be deployed into any J2EE container like tomcat, wildfly, etc.  The Source-to-Image builder will build a container image from your unison.xml and myvd.props file that has all of your libraries running a hardened version of Apache Tomcat 8.5 on the latest CentOS.  The keystore required for deployment will be stored as a secret in OpenShift.
 
-## Getting Started
-
-### Generating Keystore
+## Generating Keystore
 
 OpenUnison encrypts or signs everything that leaves it such as JWTs, workflow requests, session cookies, etc. To do this, we need to create a Java keystore that can be used to store these keys as well as the certificates used for TLS by Tomcat. When working with OpenShift something to take note of is Go does NOT work with self signed certificates that are not marked as CA:TRUE no matter how many ways you trust it. In order to use a self signed certificate you have to create a self signed certificate authority and THEN create a certificate signed by that CA. This can be done using Java's keytool but OpenSSL's approach is easier. To make this easier, the makecerts.sh script in this repository (`src/main/bash/makessl.sh`) (adapted from a similar script from CoreOS) will do this for you. Just make sure to change the subject in the script first:
 
@@ -69,7 +67,13 @@ Import the SAML2 signing certificate from your identity provider
 $ keytool -import -trustcacerts -alias idp-saml2-sig -rfc -storetype JCEKS -keystore ./unisonKeyStore.jks -file /path/to/certificate.pem
 ```
 
-### Create OpenShift Service Account
+Import the trusted certificate for OpenShift by looking for the certificate the master (Kubernetes API) server runs under.  This will depend on how you deployed OpenShift.  For instance for `oc cluster up` import the certificate from `/var/lib/origin/openshift.local.config/master/master.server.crt`:
+```bash
+$ keytool -import -trustcacerts -alias openshift-master -rfc -storetype JCEKS -keystore ./unisonKeyStore.jks -file /path/to/master.server.crt
+```  
+
+
+## Create OpenShift Service Account
 
 The easiest way to create this account is to login to the OpenShift master to run oadm and oc (these instructions from OpenUnison's product manual):
 
@@ -89,7 +93,16 @@ $ oc describe secret unison-token-XXXX
 
 In the above example, XXXX is the id of one of the tokens generated in the `Tokens` section of the output from the `oc describe serviceaccount unison`.  The final command will output a large, base64 encoded token.  This token is what OpenUnison will use to communicate with OpenShift.  Hold on to this value for the next step.
 
-### Create Environments File
+## Create cluster-admins Group
+
+Login to the master via SSH to use the `oadm` tool.  
+
+```bash
+$ oadm groups new cluster-admins
+$ oadm policy add-cluster-role-to-group cluster-admin cluster-admins
+```
+
+## Create Environments File
 
 OpenUnison stores environment specific information, such as host names, passwords, etc, in a properties file that will then be loaded by OpenUnison.  This file will be stored in OpenShift as a secret then accessed by OpenUnison on startup to fill in the `#[]` parameters in `unison.xml` and `myvd.conf`.  For instance the parameter `#[OU_HOST]` in `unison.xml` would have an entry in this file.  Below is an example file, this file should be saved as `ou.env`:
 
@@ -118,7 +131,7 @@ IDP_POST=https://idp.ent2k12.domain.com/adfs/ls/
 IDP_REDIR=https://idp.ent2k12.domain.com/adfs/ls/
 ```
 
-### Export SAML2 Metadata
+## Export SAML2 Metadata
 
 Once your environment file is built, metadata can be generated for your identity provider.  First download the OpenUnion utilities jar file from `https://www.tremolosecurity.com/nexus/service/local/repositories/betas/content/com/tremolosecurity/unison/openunison-util/1.0.12.beta/openunison-util-1.0.12.beta-jar-with-dependencies.jar` and run the export:
 
@@ -146,7 +159,28 @@ c:[Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/windowsaccou
  => issue(store = "Active Directory", types = ("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "uid", "givenName", "sn", "mail"), query = ";sAMAccountName,sAMAccountName,givenName,sn,mail;{0}", param = c.Value);
 ```
 
-### Create the OpenUnison Project
+## Build OpenUnison
+
+OpenUnison is best built using the OpenUnison s2i builder.  This builder will pull your project from source control, build it (integrating the basic OpenUnison libraries) and create a docker image built on a hardened Tomcat 8.5 instance.  This image can then be pulled in from an OpenShift deployment.  The first step is to have Docker installed.  Then download the proper s2i build for your platform from https://github.com/openshift/source-to-image/releases.
+
+```bash
+$ docker pull docker.io/tremolosecurity/openunisons2idocker:latest
+$ ./s2i build https://github.com/TremoloSecurity/openunison-qs-openshift.git docker.io/tremolosecurity/openunisons2idocker:latest docker.io/mlbiamdemos/openshift_openunison_commons:latest
+$ docker push docker.io/mlbiamdemos/openshift_openunison_commons:latest
+```
+
+The first command pulls down the builder image from DockerHub.  The second command builds OpenUnison from the OpenShift quick start's GitHub repo and tags the resulting image for pushing to DockerHub in the mlbiamdemos repository.  This is where you would want to:
+
+1. Fork Tremolo Security's github project so that you can customize it as needed
+2. Tag the image with your own repository
+
+### Using OpenShift Container Platform on Red Hat Enterprise Linux?
+
+Tremolo Security has a Red Hat certified builder for OpenUnison.  Instead of `docker.io/tremolosecurity/openunisons2idocker:latest` use `registry.connect.redhat.com/tremolosecurity/openunison-s2i-10` to use the Red Hat certified container builder.
+
+## Deploy OpenUnison
+
+First create a project to host OpenUnison
 
 ```bash
 $ oc new-project openunison
@@ -158,3 +192,104 @@ Next create a secrets file for the `unisonKeyStore.jks` and `ou.env` file base b
 ```bash
 $ oc create -f ./openunison-secrets.yaml
 ```
+
+Next update `src/main/yaml/openunison-deployment.yaml` for the image you created in the previous step by updating the `image` attribute of the `containers` spec portion of the `template`.  Once updated, you can deploy OpenUnison:
+
+```bash
+$ oc create -f ./openunison-deployment.yaml
+```
+
+Once the deployment is complete you should be able to check the pod's logs and see that OpenUnison is running.  Now deploy the service from `src/main/yaml/openunison-service.yaml`:
+
+```bash
+$ oc create -f ./openunison-service.yaml
+```
+
+Finally, create a route so you can access OpenUnison using `src/main/yaml/openunison-route.yaml`:
+
+```bash
+$ oc create -f ./oepnunison-route.yaml
+```
+
+## First Login to the OpenShift Identity Manager
+
+At this point you should be able to login to OpenUnison using the host specified in `openunison-route.yaml`.  Once you are logged in, logout.  Users are created in the database "just-in-time", meaning that once you login the data representing your user is created inside of the database we are pointing to in our `ou.env` file.
+
+## Create First Administrator
+
+The user you logged in as is currently unprivileged.  In order for other users to login and begin requesting access to projects this first user must be enabled as an approver.  Login to the MySQL database that is configured in `ou.env` and execute the following SQL:
+
+```sql
+insert into userGroups (userId,groupId) values (2,1);
+```
+
+This will add the administrator group to your user.  Logout of OpenUnison and log back in.
+
+## Self Request & Approve Cluster Administrator
+
+Once SSO is enabled in the next step, you'll need a cluster administrator to be able to perform cluster level operations:
+
+1.  Login to OpenUnison
+2.  Click on "Request Access" in the title bar
+3.  Click on "OpenShift Administration"
+4.  Click "Add To Cart" next to "Cluster Administrator"
+5.  Next to "Check Out" in the title bar you'll see a red `1`, click on "Check Out"
+6.  For "Supply Reason", give a reason like "Initial user" and click "Submit Request"
+7.  Since you are the only approver refresh OpenUnison, you will see a red `1` next to "Open Approvals".  Click on "Open Approvals"
+8. Click "Review" next to your email address
+9. Specify "Initial user" for the "Justification" and click "Approve"
+10. Click on "Confirm Approval"
+
+At this point you will be provisioned to the `cluster-admins` group in OpenShift we created earlier.  Logout of OpenUnison and log back in.  If you click on your email address in the upper left, you'll see that you have the Role `OpenShift - cluster-admins`.  
+
+## Enable SSO with OpenShift Console
+
+This step will vary based on how you have deployed OpenShift.  These instructions assume your setup uses `oc cluster up`.  The first step is to have the OpenShift master(s) trust OpenUnison's TLS certificate.  For `oc cluster up` copy the the `ssl\ca.pem` file we created at the beginning of this tutorial to `/var/lib/origin/openshift.local.config/master/openunison_ca.crt`.
+
+Next, edit `/var/lib/origin/openshift.local.config/master/master-config.yaml` to add the OpenID Connect configuration.  Under `oauthConfig` add an OpenID Connect Identity Provider:
+
+```yaml
+oauthConfig:
+  alwaysShowProviderSelection: false
+  assetPublicURL: https://openshift.demo.aws:8443/console/
+  grantConfig:
+    method: auto
+    serviceAccountMethod: prompt
+  identityProviders:
+  - challenge: true
+    login: false
+    mappingMethod: claim
+    name: anypassword
+    provider:
+      apiVersion: v1
+      kind: AllowAllPasswordIdentityProvider
+  - name: openunison
+    challenge: true
+    login: true
+    mappingMethod: claim
+    provider:
+      apiVersion: v1
+      kind: OpenIDIdentityProvider
+      clientID: openshift
+      clientSecret: XXXXX
+      ca: /var/lib/origin/openshift.local.config/master/openunison_ca.crt
+      claims:
+        id:
+        - sub
+        preferredUsername:
+        - preferred_username
+        name:
+        - name
+        email:
+        - email
+      urls:
+        authorize: https://openunison.demo.aws/auth/idp/OpenShiftIdP/auth
+        token: https://openunison.demo.aws/auth/idp/OpenShiftIdP/token
+```
+
+In the above configuration, replace the `XXXXX` of `clientSecret` with the value of `OU_OIDC_OPENSHIFT_SECRET` from your `ou.env` file.  Also make sure that the urls use the same host names as defined in your `openunison-route.yaml` and are resolvable by DNS.  
+
+Finally, restart the masters and you'll be able to login to the web console by clicking on the OpenShift badge in OpenUnison.
+
+# Whats next?
+Now you can begin mapping OpenUnison's capabilities to your business and compliance needs.  For instance you can add multi factor authentication with TOTP or U2F, Create privileged workflows for onboarding, scheduled workflows that will deprovision users, etc.
