@@ -9,7 +9,7 @@
           <filterChain>
             <filter class="com.tremolosecurity.prelude.filters.CompleteLogin" />
           </filterChain>
-          <uri>/login/saml2</uri>
+          <uri>/login/saml</uri>
           <results>
             <auFail>Default Login Failure</auFail>
             <azFail>Default Login Failure</azFail>
