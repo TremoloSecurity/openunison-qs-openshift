@@ -3,26 +3,13 @@
   <applications openSessionCookieName="openSession" openSessionTimeout="9000">
     <application name="scale" azTimeoutMillis="30000" >
       <urls>
-        <url regex="false" authChain="sslClientAuth" overrideHost="true" overrideReferer="true">
+
+        <url regex="false" authChain="enterprise_idp" overrideHost="true" overrideReferer="true">
           <host>#[OU_HOST]</host>
           <filterChain>
             <filter class="com.tremolosecurity.prelude.filters.CompleteLogin" />
           </filterChain>
-          <uri>/login/piv</uri>
-          <results>
-            <auFail>Default Login Failure</auFail>
-            <azFail>Default Login Failure</azFail>
-          </results>
-          <azRules>
-            <rule scope="dn" constraint="o=Tremolo" />
-          </azRules>
-        </url>
-        <url regex="false" authChain="activeDirectory" overrideHost="true" overrideReferer="true">
-          <host>#[OU_HOST]</host>
-          <filterChain>
-            <filter class="com.tremolosecurity.prelude.filters.CompleteLogin" />
-          </filterChain>
-          <uri>/login/form</uri>
+          <uri>/login/saml2</uri>
           <results>
             <auFail>Default Login Failure</auFail>
             <azFail>Default Login Failure</azFail>
@@ -90,26 +77,7 @@
             <rule scope="dn" constraint="o=Tremolo" />
           </azRules>
         </url>
-        <!-- <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
-          <host>#[OU_HOST]</host>
-          <filterChain>
-            <filter class="com.tremolosecurity.proxy.filters.RemovePrefix">
-              <param name="prefix" value="/scale"/>
-              <param name="attributeName" value="trimmedURI"/>
-            </filter>
-          </filterChain>
-          <uri>/scale</uri>
-          <proxyTo>https://cdn.rawgit.com/TremoloSecurity/OpenUnison/1.0.12/unison/unison-scalejs-main/src/main/html${trimmedURI}</proxyTo>
-          <results>
-            <azSuccess>
-            </azSuccess>
-            <auFail>Default Login Failure</auFail>
-            <azFail>Default Login Failure</azFail>
-          </results>
-          <azRules>
-            <rule scope="dn" constraint="o=Tremolo" />
-          </azRules>
-        </url> -->
+
         <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
           <host>#[OU_HOST]</host>
           <filterChain>
@@ -263,7 +231,7 @@
       <!-- The cookie configuration determines how sessions are managed for this application -->
       <cookieConfig>
         <!-- The name of the session cookie for this application.  Applications that want SSO between them should have the same cookie name -->
-        <sessionCookieName>tremolosession</sessionCookieName>
+          <sessionCookieName>tremolosession</sessionCookieName>
         <!-- The domain of component of the cookie -->
         <domain>#[OU_HOST]</domain>
         <!-- The URL that OpenUnison will interpret as the URL to end the session -->
@@ -355,37 +323,7 @@
         <scope>-1</scope>
       </cookieConfig>
     </application>
-    <application name="TestPIV" azTimeoutMillis="30000" >
-      <urls>
-        <url regex="false" authChain="sslClientAuth" overrideHost="true" overrideReferer="true">
-          <host>#[OU_HOST]</host>
-          <filterChain>
-            <filter class="com.tremolosecurity.prelude.filters.LoginTest">
-              <param name="logoutURI" value="/logout"/>
 
-            </filter>
-          </filterChain>
-          <uri>/testpiv</uri>
-          <results>
-            <azSuccess>
-            </azSuccess>
-          </results>
-          <azRules>
-            <rule scope="filter" constraint="(objectClass=*)" />
-          </azRules>
-        </url>
-
-      </urls>
-      <cookieConfig>
-        <sessionCookieName>testpiv</sessionCookieName>
-        <domain>#[OU_HOST]</domain>
-        <logoutURI>/logout</logoutURI>
-        <keyAlias>session-unison</keyAlias>
-        <secure>false</secure>
-        <timeout>true</timeout>
-        <scope>-1</scope>
-      </cookieConfig>
-    </application>
     <application name="OpenShiftIdP" isApp="false" azTimeoutMillis="30000">
             <results/>
             <urls>
@@ -404,7 +342,7 @@
                         <rule scope="dn" constraint="o=Tremolo"/>
                     </azRules>
                     <idp className="com.tremolosecurity.idp.providers.OpenIDConnectIdP">
-                        <params name="jwtSigningKey" value="sigenc-saml2-sig"/>
+                        <params name="jwtSigningKey" value="unison-saml2-rp-sig"/>
                         <params name="driver" value="#[OU_JDBC_DRIVER]"/>
                         <params name="url" value="#[OU_JDBC_URL]"/>
                         <params name="user" value="#[OU_JDBC_USER]"/>
@@ -507,6 +445,14 @@
   <params>
   </params>
 </mechanism>
+<mechanism name="SAML2">
+  <uri>/auth/SAML2Auth</uri>
+  <className>com.tremolosecurity.proxy.auth.SAML2Auth</className>
+  <init>
+
+  </init>
+  <params />
+</mechanism>
   </authMechs>
   <authChains>
     <!-- An anonymous authentication chain MUST be level 0 -->
@@ -518,48 +464,33 @@
         </params>
       </authMech>
     </chain>
-    <chain name="formloginFilter" level="1">
+
+
+    <chain name="enterprise_idp" level="20" root="o=Data">
       <authMech>
-        <name>loginForm</name>
-        <required>required</required>
-        <params>
-          <!-- Path to the login form -->
-          <param name="FORMLOGIN_JSP" value="/auth/forms/defaultForm.jsp"/>
-          <!-- Either an attribute name OR an ldap filter mapping the form parameters. If this is an ldap filter, form parameters are identified by ${parameter} -->
-          <param name="uidAttr" value="uid"/>
-          <!-- If true, the user is determined based on an LDAP filter rather than a simple user lookup -->
-          <param name="uidIsFilter" value="false"/>
-        </params>
-      </authMech>
-    </chain>
-    <chain name="activeDirectory" level="20" root="o=Data">
-      <authMech>
-        <name>loginForm</name>
-        <required>required</required>
-        <params>
-          <param name="FORMLOGIN_JSP" value="/auth/forms/defaultForm.jsp"/>
-          <param name="uidAttr" value="uid"/>
-          <param name="uidIsFilter" value="false"/>
-        </params>
-      </authMech>
-      <authMech>
-    <name>acknowledge</name>
-    <required>required</required>
-    <params>
-      <!-- The URI for the jsp page to host the banner and request acknowledgement   -->
-      <param name="loginJSP" value="/auth/forms/acknowledge.jsp"/>
-      <!-- The text of the banner, may be HTML  -->
-      <param name="banner" value="I acknowledge that I shall do no harm and I do not own this system.  If I do harm I understand that gremlins will be fed after midnight and released into my data center and github repo."/>
-    </params>
-  </authMech>
-      <authMech>
-        <name>map</name>
-        <required>required</required>
-        <params>
-          <param name="map" value="uid=userPrincipalName" />
-          <param name="map" value="mail=mail" />
-        </params>
-      </authMech>
+  <name>SAML2</name>
+  <required>required</required>
+  <params>
+    <param value="#[IDP_POST]" name="idpURL" />
+    <param value="#[IDP_REDIR]" name="idpRedirURL" />
+    <param value="idp-saml2-sig" name="idpSigKeyName" />
+    <param value="uid" name="ldapAttribute" />
+    <param value="saml" name="dnOU" />
+    <param value="inetOrgPerson" name="defaultOC" />
+    <param name="authCtxRef" value=""/>
+    <param name="spSigKey" value="unison-saml2-rp-sig" />
+    <param name="sigAlg" value="RSA-SHA256" />
+    <param name="signAuthnReq" value="true"/>
+    <param name="assertionsSigned" value="true" />
+    <param name="responsesSigned" value="false" />
+    <param name="assertionEncrypted" value="false" />
+    <param name="spEncKey" value="" />
+    <param name="forceToSSL" value="false" />
+    <param name="dontLinkToLDAP" value="true" />
+  </params>
+</authMech>
+
+
       <authMech>
         <name>jit</name>
         <required>required</required>
@@ -569,61 +500,16 @@
         </params>
       </authMech>
     </chain>
-    <chain name="sslClientAuth" level="40" root="o=Data">
-      <authMech>
-        <name>sslCert</name>
-        <required>required</required>
-        <params>
-          <!-- Either an attribute name OR an ldap filter mapping the certificate dn components. If this is an ldap filter, dn components are identified by ${component} -->
-          <param name="uidAttr" value="(userPrincipalName=${userPrincipalName})" />
-          <!-- If the UID Attribute is a filter or just an attribute name   -->
-          <param name="uidIsFilter" value="true"/>
-          <!-- A list of attributes in the certificate subject, or subject alternative names, that will be the RDN of an unmatched entry. -->
-          <param name="rdnAttribute" value="rfc822Name" />
-          <!-- The object class to use for objects created because the user doesn’t exist in the directory -->
-          <param name="defaultOC" value="inetOrgPerson" />
 
-          <!-- The ou component of the DN to use for users not matched. For instance if SSL is specified the user’s dn would be uid=user,ou=SSL,o=Tremolo -->
-          <param name="dnLabel" value="ou=CertAuth"/>
 
-          <!-- List of DN’s of trusted certificates that the chain will accept -->
-          <param name="issuer" value="OU=Entrust Managed Services SSP CA, OU=Certification Authorities, O=Entrust, C=US"/>
-        </params>
-      </authMech>
-      <authMech>
-    <name>acknowledge</name>
-    <required>required</required>
-    <params>
-      <!-- The URI for the jsp page to host the banner and request acknowledgement   -->
-      <param name="loginJSP" value="/auth/forms/acknowledge.jsp"/>
-      <!-- The text of the banner, may be HTML  -->
-      <param name="banner" value="I acknowledge that I shall do no harm and I do not own this system.  If I do harm I understand that gremlins will be fed after midnight and released into my data center and github repo."/>
-    </params>
-  </authMech>
-      <authMech>
-        <name>map</name>
-        <required>required</required>
-        <params>
-          <param name="map" value="uid=userPrincipalName" />
-          <param name="map" value="mail=mail" />
-        </params>
-      </authMech>
-      <authMech>
-        <name>jit</name>
-        <required>required</required>
-        <params>
-          <param name="nameAttr" value="uid" />
-          <param name="workflowName" value="jitdb" />
-        </params>
-      </authMech>
-    </chain>
+
+
     <chain level="20" name="LoginService">
     <authMech>
       <name>LoginService</name>
       <required>required</required>
       <params>
-        <param name="chains" value="PIV=/login/piv" />
-        <param name="chains" value="Username and Password=/login/form" />
+        <param name="chains" value="SAML2=/login/saml" />
         <param name="serviceUrl" value="/auth/forms/chooseLogin.jsp" />
         <param name="cookieName" value="tremoloLoginChoice"/>
         <param name="cookieDays" value="30" />
