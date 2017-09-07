@@ -129,6 +129,8 @@ OPENSHIFT_OU_HOST=openunison.openunison.svc
 unisonKeystorePassword=xxxx
 IDP_POST=https://idp.ent2k12.domain.com/adfs/ls/
 IDP_REDIR=https://idp.ent2k12.domain.com/adfs/ls/
+IDP_LOGOUT=https://idp.ent2k12.domain.com/adfs/ls/
+IDP_ENTITY_ID=https://idp.ent2k12.domain.com/adfs/services/trust
 ```
 
 ## Export SAML2 Metadata
