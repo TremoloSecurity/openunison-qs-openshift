@@ -78,15 +78,15 @@ $ keytool -import -trustcacerts -alias openshift-master -rfc -storetype JCEKS -k
 The easiest way to create this account is to login to the OpenShift master to run oadm and oc (these instructions from OpenUnison's product manual):
 
 ```bash
-$ oc new-project unison-service
-$ oc project unison-service
-$ cat <<EOF | oc create -n unison-service -f -
+$ oc new-project openunison
+$ oc project openunison
+$ cat <<EOF | oc create -n openunison -f -
 kind: ServiceAccount
 apiVersion: v1
 metadata:
   name: unison
 EOF
-$ oadm policy add-cluster-role-to-user cluster-admin system:serviceaccount:unison-service:unison
+$ oadm policy add-cluster-role-to-user cluster-admin system:serviceaccount:openunison:unison
 $ oc describe serviceaccount unison
 $ oc describe secret unison-token-XXXX
 ```
@@ -138,7 +138,7 @@ IDP_ENTITY_ID=https://idp.ent2k12.domain.com/adfs/services/trust
 Once your environment file is built, metadata can be generated for your identity provider.  First download the OpenUnion utilities jar file from `https://www.tremolosecurity.com/nexus/service/local/repositories/betas/content/com/tremolosecurity/unison/openunison-util/1.0.12.beta/openunison-util-1.0.12.beta-jar-with-dependencies.jar` and run the export:
 
 ```bash
-$ $ java -jar ./openunison-util-1.0.12.beta.jar -action export-sp-metadata -chainName enterprise_idp -unisonXMLFile /path/to/openunison-qs-openshift/src/main/webapp/WEB-INF/unison.xml -keystorePath ./unisonKeyStore.jks -envFile ./ou.env -mechanismName SAML2 -urlBase https://openunison.demo.aws
+$ java -jar ./openunison-util-1.0.12.beta.jar -action export-sp-metadata -chainName enterprise_idp -unisonXMLFile /path/to/openunison-qs-openshift/src/main/webapp/WEB-INF/unison.xml -keystorePath ./unisonKeyStore.jks -envFile ./ou.env -mechanismName SAML2 -urlBase https://openunison.demo.aws
 ```
 
 Make sure to replace the `-urlBase` with the URL user for accessing OpenUnison.  It should use the same host as in OU_HOST.  This command will generate XML to the console that can be copied&pasted into a file that can be submited to your identity provider.
@@ -161,9 +161,45 @@ c:[Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/windowsaccou
  => issue(store = "Active Directory", types = ("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier", "uid", "givenName", "sn", "mail"), query = ";sAMAccountName,sAMAccountName,givenName,sn,mail;{0}", param = c.Value);
 ```
 
+## Create OpenUnison YAML
+
+OpenUnison can be configured to use specific TLS ciphers or algorithms.  Create a file called `openunison.yaml` in the same directory where you created your ou.env and unisonKeyStore.jks file using the content from the [OpenUnisonS2IDocker ReadMe](https://github.com/TremoloSecurity/OpenUnisonS2IDocker/blob/master/README.md) under the section **openunison.yaml**.  Unless you have special requirements (ie you need to allow more or fewer ciphers) you shouldn't need to make any changes.   
+
+## Deploy OpenUnison Secret
+
+OpenShift stores secrets, ie passwords, keystores, etc in special volumes called Secrets.  Creating a secret involves base64 encoding your files and putting them into a YAML file, which is error prone.  To make this easier there's a script that will create the secret yaml for you so you can import it into openshift in `src/main/bash`:
+
+```bash
+$ ./makesecret.sh /path/to/openunison-artifacts | oc create -f - -n openunison
+```
+
 ## Build OpenUnison
 
-OpenUnison is best built using the OpenUnison s2i builder.  This builder will pull your project from source control, build it (integrating the basic OpenUnison libraries) and create a docker image built on a hardened Tomcat 8.5 instance.  This image can then be pulled in from an OpenShift deployment.  The first step is to have Docker installed.  Then download the proper s2i build for your platform from https://github.com/openshift/source-to-image/releases.
+OpenUnison is best built using the OpenUnison s2i builder.  This builder can either build OpenUnison based on an existing maven project, or it can simply deploy a war file of a pre-built OpenUnison project.  For a detailed explination of the OpenUnison build process, see OpenUnison's [deployment documentation](https://www.tremolosecurity.com/docs/tremolosecurity-docs/1.0.12/openunison/openunison-manual.html#_deploying_openunison_on_undertow).
+
+### Let OpenShift Build OpenUnison
+
+OpenShift's built in ImageStream and BuildConfig objects let you build OpenUnison from your project directly out of GitHub.  This is a great approach when you're using GitHub and don't have an existing CI/CD pipeline in place.
+
+The first step is to pull the s2i builder image into OpenShift's docker image repository.
+
+```bash
+$ docker pull docker.io/tremolosecurity/openunisons2idocker
+$ docker tag docker.io/tremolosecurity/openunisons2idocker docker-registry-local.tremolo.lan/openunison/openunison-s2i
+$ docker push docker-registry-local.tremolo.lan/openunison/openunison-s2i
+```
+NOTE: **docker-registry-local.tremolo.lan** is the host name of our testing OpenShift's registry.  Replace it with the host name of your OpenShift's registry.
+
+Next, deploy the S2I template to your project:
+
+```bash
+$ oc create -f /path/to/git/openunison-qs-openshift/src/main/json/openunison-https-s2i.json -n openunison
+```
+
+
+### Build OpenUnison Externally
+
+This builder will pull your project from source control, build it (integrating the basic OpenUnison libraries) and create a docker image built on a hardened Tomcat 8.5 instance.  This image can then be pulled in from an OpenShift deployment.  The first step is to have Docker installed.  Then download the proper s2i build for your platform from https://github.com/openshift/source-to-image/releases.
 
 ```bash
 $ docker pull docker.io/tremolosecurity/openunisons2idocker:latest

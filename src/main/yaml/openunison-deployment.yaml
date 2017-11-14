@@ -5,12 +5,6 @@ metadata:
 spec:
   strategy:
     type: Rolling
-    recreateParams:
-      timeoutSeconds: 600
-    resources: {}
-    activeDeadlineSeconds: 21600
-  triggers:
-    - type: ConfigChange
   replicas: 1
   test: false
   template:
