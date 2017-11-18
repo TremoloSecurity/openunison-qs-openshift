@@ -173,7 +173,7 @@
                                       "/usr/local/openunison/bin/check_alive.py"
                                     ]
                                   },
-                                  "initialDelaySeconds":120,
+                                  "initialDelaySeconds":30,
                                   "timeoutSeconds":10
                                 },
                                 "readinessProbe": {
@@ -182,7 +182,7 @@
                                       "/usr/local/openunison/bin/check_alive.py"
                                     ]
                                   },
-                                  "initialDelaySeconds":120,
+                                  "initialDelaySeconds":30,
                                   "timeoutSeconds":10
                                 },
                                 "ports": [

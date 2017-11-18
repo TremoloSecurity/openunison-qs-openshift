@@ -28,7 +28,7 @@
             "value": "openunison",
             "required": true
         },
-        
+
         {
             "displayName": "Custom https Route Hostname",
             "description": "Custom hostname for https service route.  Leave blank for default hostname, e.g.: secure-<application-name>-<project>.<default-domain-suffix>",
@@ -272,7 +272,7 @@
                                       "/usr/local/openunison/bin/check_alive.py"
                                     ]
                                   },
-                                  "initialDelaySeconds":120,
+                                  "initialDelaySeconds":30,
                                   "timeoutSeconds":10
                                 },
                                 "readinessProbe": {
@@ -281,7 +281,7 @@
                                       "/usr/local/openunison/bin/check_alive.py"
                                     ]
                                   },
-                                  "initialDelaySeconds":120,
+                                  "initialDelaySeconds":30,
                                   "timeoutSeconds":10
                                 },
                                 "ports": [

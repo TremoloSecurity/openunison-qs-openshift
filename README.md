@@ -184,11 +184,9 @@ OpenShift's built in ImageStream and BuildConfig objects let you build OpenUniso
 The first step is to pull the s2i builder image into OpenShift's docker image repository.
 
 ```bash
-$ docker pull docker.io/tremolosecurity/openunisons2idocker
-$ docker tag docker.io/tremolosecurity/openunisons2idocker docker-registry-local.tremolo.lan/openunison/openunison-s2i
-$ docker push docker-registry-local.tremolo.lan/openunison/openunison-s2i
+$ oc import-image openunison-s2i:lastest --from=docker.io/tremolosecurity/openunisons2idocker:latest
 ```
-NOTE: **docker-registry-local.tremolo.lan** is the host name of our testing OpenShift's registry.  Replace it with the host name of your OpenShift's registry.
+This will create an `ImageStream` in the openunison project that will be used for building OpenUnison. 
 
 Next, deploy the S2I template to your project:
 
@@ -314,13 +312,6 @@ oauthConfig:
     method: auto
     serviceAccountMethod: prompt
   identityProviders:
-  - challenge: true
-    login: false
-    mappingMethod: claim
-    name: anypassword
-    provider:
-      apiVersion: v1
-      kind: AllowAllPasswordIdentityProvider
   - name: openunison
     challenge: true
     login: true
@@ -346,6 +337,16 @@ oauthConfig:
 ```
 
 In the above configuration, replace the `XXXXX` of `clientSecret` with the value of `OU_OIDC_OPENSHIFT_SECRET` from your `ou.env` file.  Also make sure that the urls use the same host names as defined by your `HOSTNAME_HTTPS` variable when processing the template and is resolvable by DNS.  
+
+OpenShift doesn't directly support single logout, so to logout of OpenUnison (and your SAML2 identity provider) update the `logoutURL` setting in the `master-config.yaml` file to point to `/logout` on your OpenUnison deployment.  So if your `HOSTNAME_HTTPS` were `ouidp.tremolo.lan` the value should be `https://ouidp.tremolo.lan/logout`.
+
+Before restarting, we want to make sure that users do not create projects outside of OpenUnison.  First run the following command:
+
+```
+$ oadm policy remove-cluster-role-from-group self-provisioner system:authenticated system:authenticated:oauth
+```
+
+Next update the `projectRequestMessage` parameter in `master-config.yaml` with a message to users telling them how to request projects such as **To request a new project click on the New OpenShift Project badge in OpenUnison**.
 
 Finally, restart the masters and you'll be able to login to the web console by clicking on the OpenShift badge in OpenUnison.
 
