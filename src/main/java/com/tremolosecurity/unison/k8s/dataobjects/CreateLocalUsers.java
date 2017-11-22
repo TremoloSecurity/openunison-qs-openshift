@@ -106,6 +106,11 @@ public class CreateLocalUsers implements Insert {
 			admins.setDescription("System administrators with approval access for new projects and new cluster admins");
 			session.save(admins);
 
+			LocalGroup k8sAdmins = new LocalGroup();
+			k8sAdmins.setName("k8s-cluster-administrators");
+			k8sAdmins.setDescription("Kubernetes cluster administrators");
+			session.save(k8sAdmins);
+
 			LocalGroup sys = new LocalGroup();
 			sys.setName("System");
 			sys.setDescription("System level groups not assigned to local users");

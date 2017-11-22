@@ -13,10 +13,10 @@
             <param name="name" value="sn"/>
             <param name="name" value="mail"/>
         </customTask>
-        <approval label="Approve Access for OpenShift Cluster Administrator">
+        <approval label="Approve Access for Kubernetes Cluster Administrator">
             <onSuccess>
-                <addGroup name="cluster-admins" remove="false"/>
-                <provision sync="false" target="openshift" setPassword="false" onlyPassedInAttributes="false">
+                <addGroup name="k8s-cluster-administrators" remove="false"/>
+                <provision sync="false" target="jitdb" setPassword="false" onlyPassedInAttributes="false">
                     <attributes/>
                 </provision>
                 <notifyUser subject="Access to Cluster Admin Approved" mailAttrib="mail">
@@ -26,10 +26,10 @@
             <onFailure>
                 <customTask className="com.tremolosecurity.provisioning.customTasks.LoadGroupsFromTarget">
                     <param name="nameAttr" value="uid"/>
-                    <param name="target" value="openshift"/>
+                    <param name="target" value="jitdb"/>
                 </customTask>
-                <addGroup name="cluster-admins" remove="true"/>
-                <provision sync="true" target="openshift" setPassword="false" onlyPassedInAttributes="false">
+                <addGroup name="k8s-cluster-administrators" remove="true"/>
+                <provision sync="true" target="jitdb" setPassword="false" onlyPassedInAttributes="false">
                     <attributes/>
                 </provision>
             </onFailure>

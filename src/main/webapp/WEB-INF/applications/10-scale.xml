@@ -17,7 +17,7 @@
     </url>
     <!-- The regex attribute defines if the proxyTo tag should be interpreted with a regex or not -->
     <!-- The authChain attribute should be the name of an authChain -->
-    <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
+    <url regex="true" authChain="LoginService" overrideHost="true" overrideReferer="true">
       <!-- Any number of host tags may be specified to allow for an application to work on multiple hosts.  Additionally an asterick (*) can be specified to make this URL available for ALL hosts -->
       <host>#[OU_HOST]</host>
       <!-- The filterChain allows for transformations of the request such as manipulating attributes and injecting headers -->
@@ -28,7 +28,7 @@
         <filter class="com.tremolosecurity.prelude.filters.StopProcessing" />
       </filterChain>
       <!-- The URI (aka path) of this URL -->
-      <uri>/</uri>
+      <uri>^/$</uri>
       <!-- Tells OpenUnison how to reach the downstream application.  The ${} lets you set any request variable into the URI, but most of the time ${fullURI} is sufficient -->
       <proxyTo>http://dnm${fullURI}</proxyTo>
       <!-- List the various results that should happen -->
