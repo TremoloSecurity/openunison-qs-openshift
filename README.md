@@ -184,7 +184,7 @@ OpenShift's built in ImageStream and BuildConfig objects let you build OpenUniso
 The first step is to pull the s2i builder image into OpenShift's docker image repository.
 
 ```bash
-$ oc import-image openunison-s2i:lastest --from=docker.io/tremolosecurity/openunisons2idocker:latest
+$ oc import-image openunison-s2i:latest --from=docker.io/tremolosecurity/openunisons2idocker:latest
 ```
 This will create an `ImageStream` in the openunison project that will be used for building OpenUnison. 
 
