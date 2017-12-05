@@ -97,8 +97,8 @@
       <filterChain>
         <filter class="com.tremolosecurity.scalejs.ws.ScaleMain">
           <param name="displayNameAttribute" value="mail"/>
-          <param name="frontPage.title" value="OpenShift Access Portal"/>
-          <param name="frontPage.text" value="Use this portal to create and access projects in OpenShift"/>
+          <param name="frontPage.title" value="Kubernetes Access Portal"/>
+          <param name="frontPage.text" value="Use this portal to create and access namespaces in Kubernetes"/>
           <param name="canEditUser" value="false"/>
           <param name="workflowName" value=""/>
           <param name="warnMinutesLeft" value="5" />
@@ -147,11 +147,11 @@
                     <filter class="com.tremolosecurity.scalejs.register.ws.ScaleRegister">
                         <param name="displayNameAttribute" value="mail"/>
                         <param name="uidAttributeName" value="uid"/>
-                        <param name="workflowName" value="NewOpenShiftProject"/>
+                        <param name="workflowName" value="NewK8SNamespace"/>
                         <param name="logoutURL" value="/logout"/>
                         <param name="homeURL" value="/"/>
-                        <param name="frontPage.text" value="Use this page to request the creation of a new project.  Once the project is approved you will be the first approver and administrator.  You will be notified when the project is ready."/>
-                        <param name="frontPage.title" value="Create New Project"/>
+                        <param name="frontPage.text" value="Use this page to request the creation of a new namespace.  Once the namespace is approved you will be the first approver and administrator.  You will be notified when the namespace is ready."/>
+                        <param name="frontPage.title" value="Create New Namespace"/>
                         <param name="preSetPassword" value="false"/>
                         <param name="requireReason" value="true"/>
                         <param name="requireReCaptcha" value="false"/>
@@ -162,16 +162,16 @@
                         <param name="useCallWorkflowClass" value="false"/>
                         <param name="callWorkflowClassName" value=""/>
                         <param name="submitLoggedInUser" value="true"/>
-                        <param name="attributeNames" value="projectName"/>
-                        <param name="projectName.displayName" value="Project Name"/>
-                        <param name="projectName.readOnly" value="false"/>
-                        <param name="projectName.required" value="false"/>
-                        <param name="projectName.regEx" value=".*"/>
-                        <param name="projectName.regExFailedMsg" value="Required"/>
-                        <param name="projectName.minChars" value="0"/>
-                        <param name="projectName.maxChars" value="0"/>
-                        <param name="projectName.unique" value="false"/>
-                        <param name="projectName.type" value="text"/>
+                        <param name="attributeNames" value="nameSpace"/>
+                        <param name="nameSpace.displayName" value="Namespace Name"/>
+                        <param name="nameSpace.readOnly" value="false"/>
+                        <param name="nameSpace.required" value="false"/>
+                        <param name="nameSpace.regEx" value=".*"/>
+                        <param name="nameSpace.regExFailedMsg" value="Required"/>
+                        <param name="nameSpace.minChars" value="0"/>
+                        <param name="nameSpace.maxChars" value="0"/>
+                        <param name="nameSpace.unique" value="false"/>
+                        <param name="nameSpace.type" value="text"/>
                     </filter>
                 </filterChain>
                 <uri>/newproject/register</uri>
@@ -224,13 +224,63 @@
                 </azRules>
             </url>
 
+            <url regex="false" authChain="LoginService" overrideHost="false" overrideReferer="false">
+                <host>#[OU_HOST]</host>
+                <filterChain>
+
+                </filterChain>
+                <uri>/k8stoken</uri>
+
+                <results>
+                    <auSuccess></auSuccess>
+                    <auFail>Default Login Failure</auFail>
+                    <azSuccess></azSuccess>
+                    <azFail>PrivilegedRequest</azFail>
+                </results>
+                <azRules>
+                    <rule scope="filter" constraint="(groups=k8s-*)"/>
+                </azRules>
+            </url>
+
+            <url regex="false" authChain="LoginService" overrideHost="false" overrideReferer="false">
+                <host>#[OU_HOST]</host>
+                <filterChain>
+                  <filter class="com.tremolosecurity.scalejs.token.ws.ScaleToken">
+                  <param name="displayNameAttribute" value="mail"/>
+                  <param name="frontPage.title" value="Kubernetes kubectl command"/>
+                  <param name="frontPage.text" value="Use this kubectl command to set your user in .kubectl/config"/>
+                  <param name="logoutURL" value="/logout"/>
+                  <param name="homeURL" value="/scale/index.html"/>
+                  <param name="warnMinutesLeft" value="5" />>
+                  <param name="tokenClassName" value="com.tremolosecurity.scalejs.KubectlTokenLoader"/>
+                  <param name="uidAttributeName" value="uid"/>
+                  <param name="kubectlUsage" value="Run this command to use your local kubectl" />
+                  <param name="k8sMasterCaCertificateURL" value="https://openunison.tremololocal.lan/k8s.pem"/>
+                  <param name="caCertificateURL" value="https://openunison.tremololocal.lan/openunison.pem"/>
+                  <param name="kubectlTemplate" value="kubectl config set-cluster kubernetes --server=https://192.168.56.100:6443 --certificate-authority=/home/mlb/projects/k8s/k8s-ca.pem &amp;&amp; kubectl config set-context kubernetes --cluster=kubernetes --user=$user_id$ &amp;&amp; kubectl config set-credentials $user_id$  --auth-provider=oidc --auth-provider-arg=idp-issuer-url=$token.claims.issuer$ --auth-provider-arg=client-id=$token.trustName$ --auth-provider-arg=refresh-token=$token.refreshToken$ --auth-provider-arg=idp-certificate-authority=/home/mlb/projects/k8s/ssl/ca.pem --auth-provider-arg=id-token=$trust.encodedIdJSON$ &amp;&amp; kubectl config use-context kubernetes" />
+                </filter>
+                </filterChain>
+                <uri>/k8stoken/token</uri>
+
+                <results>
+                    <auSuccess></auSuccess>
+                    <auFail>Default Login Failure</auFail>
+                    <azSuccess></azSuccess>
+                    <azFail>PrivilegedRequest</azFail>
+                </results>
+                <azRules>
+                    <rule scope="filter" constraint="(groups=k8s-*)"/>
+                </azRules>
+            </url>
+
+
   </urls>
   <!-- The cookie configuration determines how sessions are managed for this application -->
   <cookieConfig>
     <!-- The name of the session cookie for this application.  Applications that want SSO between them should have the same cookie name -->
       <sessionCookieName>tremolosession</sessionCookieName>
     <!-- The domain of component of the cookie -->
-    <domain>#[OU_HOST]</domain>
+    <domain>#[OU_COOKIE_DOMAIN]</domain>
     <!-- The URL that OpenUnison will interpret as the URL to end the session -->
     <logoutURI>/logout</logoutURI>
     <!-- The name of the AES-256 key in the keystore to use to encrypt this session -->

@@ -1,9 +1,0 @@
-<target name="openshift" className="com.tremolosecurity.unison.openshiftv3.OpenShiftTarget">
-    <params>
-        <param name="url" value="#[OPENSHIFT_URL]"/>
-        <param name="userName" value=""/>
-        <param name="password" value=""/>
-        <param name="token" value="#[OPENSHIFT_TOKEN]"/>
-        <param name="useToken" value="true"/>
-    </params>
-</target>

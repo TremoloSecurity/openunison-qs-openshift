@@ -1,7 +1,7 @@
 <application name="k8s" azTimeoutMillis="30000" >
   <urls>
     <url regex="false" authChain="LoginService" overrideHost="true" overrideReferer="true">
-      <host>#[OU_HOST]</host>
+      <host>#[K8S_DASHBOARD_HOST]</host>
       <filterChain>
       </filterChain>
       <uri>/</uri>
@@ -10,7 +10,7 @@
         <azSuccess>oauth2bearer</azSuccess>
       </results>
       <azRules>
-        <rule scope="dn" constraint="o=Tremolo" />
+        <rule scope="filter" constraint="(groups=k8s-*)" />
       </azRules>
     </url>
   </urls>
@@ -19,7 +19,7 @@
     <!-- The name of the session cookie for this application.  Applications that want SSO between them should have the same cookie name -->
       <sessionCookieName>tremolosession</sessionCookieName>
     <!-- The domain of component of the cookie -->
-    <domain>#[OU_HOST]</domain>
+    <domain>#[OU_COOKIE_DOMAIN]</domain>
     <!-- The URL that OpenUnison will interpret as the URL to end the session -->
     <logoutURI>/logout</logoutURI>
     <!-- The name of the AES-256 key in the keystore to use to encrypt this session -->

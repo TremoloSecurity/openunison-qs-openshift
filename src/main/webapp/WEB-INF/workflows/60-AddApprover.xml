@@ -15,27 +15,43 @@
         </customTask>
         <approval label="Approve access to $groupName$">
             <onSuccess>
+              <mapping  strict="true">
+                <map>
+                  <mapping targetAttributeName="sub" sourceType="user" targetAttributeSource="uid"/>
+                  <mapping targetAttributeName="mail" sourceType="user" targetAttributeSource="mail"/>
+                </map>
+                <onSuccess>
                 <addGroup name="$groupName$" remove="false"/>
                 <provision sync="false" target="jitdb" setPassword="false" onlyPassedInAttributes="false">
                     <attributes>
-                        <value>uid</value>
+                        <value>sub</value>
                     </attributes>
                 </provision>
                 <notifyUser subject="Approval access to $groupName$ approved" mailAttrib="mail">
                     <msg>Your access has been approved, please login</msg>
                 </notifyUser>
+              </onSuccess>
+            </mapping>
             </onSuccess>
             <onFailure>
+              <mapping  strict="true">
+                <map>
+                  <mapping targetAttributeName="sub" sourceType="user" targetAttributeSource="uid"/>
+                  <mapping targetAttributeName="mail" sourceType="user" targetAttributeSource="mail"/>
+                </map>
+                <onSuccess>
                 <customTask className="com.tremolosecurity.provisioning.customTasks.LoadGroupsFromTarget">
                     <param name="target" value="jitdb"/>
-                    <param name="nameAttr" value="uid"/>
+                    <param name="nameAttr" value="sub"/>
                 </customTask>
                 <addGroup name="$groupName$" remove="true"/>
                 <provision sync="true" target="jitdb" setPassword="false" onlyPassedInAttributes="false">
                     <attributes>
-                        <value>uid</value>
+                        <value>sub</value>
                     </attributes>
                 </provision>
+              </onSuccess>
+            </mapping>
             </onFailure>
             <emailTemplate>New open request</emailTemplate>
             <approvers>

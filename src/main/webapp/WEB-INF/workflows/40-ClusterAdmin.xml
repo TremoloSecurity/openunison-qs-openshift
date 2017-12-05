@@ -15,23 +15,43 @@
         </customTask>
         <approval label="Approve Access for Kubernetes Cluster Administrator">
             <onSuccess>
+              <mapping  strict="true">
+                <map>
+                  <mapping targetAttributeName="sub" sourceType="user" targetAttributeSource="uid"/>
+                  <mapping targetAttributeName="mail" sourceType="user" targetAttributeSource="mail"/>
+                </map>
+                <onSuccess>
                 <addGroup name="k8s-cluster-administrators" remove="false"/>
                 <provision sync="false" target="jitdb" setPassword="false" onlyPassedInAttributes="false">
-                    <attributes/>
+                    <attributes>
+                      <value>sub</value>
+                    </attributes>
                 </provision>
                 <notifyUser subject="Access to Cluster Admin Approved" mailAttrib="mail">
                     <msg>Your access has been approved.</msg>
                 </notifyUser>
+              </onSuccess>
+            </mapping>
             </onSuccess>
             <onFailure>
+              <mapping  strict="true">
+                <map>
+                  <mapping targetAttributeName="sub" sourceType="user" targetAttributeSource="uid"/>
+                  <mapping targetAttributeName="mail" sourceType="user" targetAttributeSource="mail"/>
+                </map>
+                <onSuccess>
                 <customTask className="com.tremolosecurity.provisioning.customTasks.LoadGroupsFromTarget">
-                    <param name="nameAttr" value="uid"/>
+                    <param name="nameAttr" value="sub"/>
                     <param name="target" value="jitdb"/>
                 </customTask>
                 <addGroup name="k8s-cluster-administrators" remove="true"/>
                 <provision sync="true" target="jitdb" setPassword="false" onlyPassedInAttributes="false">
-                    <attributes/>
+                    <attributes>
+                      <value>sub</value>
+                    </attributes>
                 </provision>
+              </onSuccess>
+            </mapping>
             </onFailure>
             <emailTemplate>There is an open request for cluster administration</emailTemplate>
             <approvers>
