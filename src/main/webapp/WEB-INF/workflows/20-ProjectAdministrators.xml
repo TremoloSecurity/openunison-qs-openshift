@@ -11,6 +11,8 @@
   <param name="filter" value="openshift-infra" />
   <param name="filter" value="unison-service" />
   <param name="filter" value="openunison" />
+  <param name="filter" value="logging" />
+  <param name="filter" value="management-infra" />
 </dynamicConfiguration>
 <tasks>
   <customTask className="com.tremolosecurity.provisioning.customTasks.LoadAttributes">

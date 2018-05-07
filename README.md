@@ -135,10 +135,10 @@ IDP_ENTITY_ID=https://idp.ent2k12.domain.com/adfs/services/trust
 
 ## Export SAML2 Metadata
 
-Once your environment file is built, metadata can be generated for your identity provider.  First download the OpenUnion utilities jar file from `https://www.tremolosecurity.com/nexus/service/local/repositories/betas/content/com/tremolosecurity/unison/openunison-util/1.0.12.beta/openunison-util-1.0.12.beta-jar-with-dependencies.jar` and run the export:
+Once your environment file is built, metadata can be generated for your identity provider.  First download the OpenUnion utilities jar file from `https://www.tremolosecurity.com/nexus/service/local/repositories/releases/content/com/tremolosecurity/unison/openunison-util/1.0.12/openunison-util-1.0.12.jar` and run the export:
 
 ```bash
-$ java -jar ./openunison-util-1.0.12.beta.jar -action export-sp-metadata -chainName enterprise_idp -unisonXMLFile /path/to/openunison-qs-openshift/src/main/webapp/WEB-INF/unison.xml -keystorePath ./unisonKeyStore.jks -envFile ./ou.env -mechanismName SAML2 -urlBase https://openunison.demo.aws
+$ java -jar ./openunison-util-1.0.12.jar -action export-sp-metadata -chainName enterprise_idp -unisonXMLFile /path/to/openunison-qs-openshift/src/main/webapp/WEB-INF/unison.xml -keystorePath ./unisonKeyStore.jks -envFile ./ou.env -mechanismName SAML2 -urlBase https://openunison.demo.aws
 ```
 
 Make sure to replace the `-urlBase` with the URL user for accessing OpenUnison.  It should use the same host as in OU_HOST.  This command will generate XML to the console that can be copied&pasted into a file that can be submited to your identity provider.
@@ -184,7 +184,7 @@ OpenShift's built in ImageStream and BuildConfig objects let you build OpenUniso
 The first step is to pull the s2i builder image into OpenShift's docker image repository.
 
 ```bash
-$ oc import-image openunison-s2i:lastest --from=docker.io/tremolosecurity/openunisons2idocker:latest
+$ oc import-image openunison-s2i:latest --from=docker.io/tremolosecurity/openunisons2idocker:latest
 ```
 This will create an `ImageStream` in the openunison project that will be used for building OpenUnison. 
 
