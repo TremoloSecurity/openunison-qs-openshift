@@ -1,0 +1,190 @@
+---
+- hosts: openunison_openshift
+  tasks:
+  - name: import cert from metadata
+    register: idp_cert_2
+    command: "xpath -e \"/EntityDescriptor/IDPSSODescriptor/KeyDescriptor[2]/KeyInfo/X509Data/X509Certificate/text()\" -q {{idp_metadata_xml}}"
+
+  - name: remove new lines
+    set_fact:
+      idp_cert: "{{idp_cert_2.stdout | replace('\n','')}}"
+
+  - name: create base64 file
+    copy: content="{{ idp_cert }}" dest="{{local_dest_path}}/idp.b64"
+
+  - name: create der file
+    shell: "cat {{local_dest_path}}/idp.b64 | base64 -d   > {{local_dest_path}}/idp.der"
+    
+  - name: get idp_redir_url
+    register: idp_redir_url
+    shell: "xpath -e \"/EntityDescriptor/IDPSSODescriptor/SingleSignOnService[@Binding='urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect']/@Location\" -q {{idp_metadata_xml}} | sed 's/Location=\"//g' | sed 's/\"//g' | sed 's/ //g'"
+
+  - name: get idp_post_url
+    register: idp_post_url
+    shell: "xpath -e \"/EntityDescriptor/IDPSSODescriptor/SingleSignOnService[@Binding='urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST']/@Location\" -q {{idp_metadata_xml}} | sed 's/Location=\"//g' | sed 's/\"//g' | sed 's/ //g'"
+
+  - name: get idp_logout_url
+    register: idp_logout_url
+    shell: "xpath -e \"/EntityDescriptor/IDPSSODescriptor/SingleLogoutService[@Binding='urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect']/@Location\" -q {{idp_metadata_xml}} | sed 's/Location=\"//g' | sed 's/\"//g' | sed 's/ //g'"
+
+  - name: get idp_entity_id
+    register: idp_entity_id
+    shell: "xpath -e \"/EntityDescriptor/@entityID\" -q {{idp_metadata_xml}} | sed 's/entityID=\"//g' | sed 's/\"//g' | sed 's/ //g'"
+
+  - name: Create OpenUnison project
+    command: "oc new-project {{openunison_openshift_project_name}}"
+
+  - name: Create OpenUnison service account
+    command: "oc create sa openunison -n {{ openunison_openshift_project_name }}"
+
+  - name: Add OpenUnison service account to cluster admins
+    command: "oc adm policy add-cluster-role-to-user cluster-admin system:serviceaccount:{{ openunison_openshift_project_name}}:openunison"
+
+  - name: Get token
+    register: token_output
+    command: "oc sa get-token openunison -n {{ openunison_openshift_project_name }}" 
+
+  - name: Create cluster admins group
+    command: "oc adm groups new cluster-admins"
+
+  - name: Add policy to cluster-admins
+    command: "oc adm policy add-cluster-role-to-group cluster-admin cluster-admins"
+
+  - name: Create ou.env template
+    template:
+      src: "{{ local_src_path }}/ou.env.template"
+      dest: "{{ local_dest_path }}/ou.env"
+      mode: 0644
+
+  - name: Create openunison.yaml template
+    template:
+      src: "{{ local_src_path }}/openunison.yaml.template"
+      dest: "{{ local_dest_path }}/openunison.yaml"
+      mode: 0644
+
+
+
+  - name: Create unison-tls certificate
+    command: "openssl req -x509 -sha256 -nodes -days 3650 -newkey rsa:2048 -subj '{{openunison_tls_subject}}' -keyout {{local_dest_path}}/privateKey.key -out {{local_dest_path}}/openunison-tls.pem"
+
+  - name: Create pkcs12 file
+    command: "openssl pkcs12 -export -out {{local_dest_path}}/unisonKeystore.p12 -inkey {{local_dest_path}}/privateKey.key -in {{local_dest_path}}/openunison-tls.pem -passout pass:{{keystore_password}} -name unison-tls" 
+  
+  - name: Create unison-saml2-rp-sig certificate
+    command: "openssl req -x509 -sha256 -nodes -days 3650 -newkey rsa:2048 -subj '{{openunison_rp_subject}}' -keyout {{local_dest_path}}/privateKey.key -out {{local_dest_path}}/certificate.crt"
+
+  - name: Create pkcs12 file
+    command: "openssl pkcs12 -export -out {{local_dest_path}}/unisonKeystore_2.p12 -inkey {{local_dest_path}}/privateKey.key -in {{local_dest_path}}/certificate.crt -passout pass:{{keystore_password}} -name unison-saml2-rp-sig" 
+
+  - name: Merge relying party certificate into unisonKEystore.p12
+    command: "keytool -importkeystore -srckeystore {{local_dest_path}}/unisonKeystore_2.p12 -srcstoretype PKCS12 -srcalias unison-saml2-rp-sig -destKeystore {{local_dest_path}}/unisonKeystore.p12 -deststoretype PKCS12 -destalias unison-saml2-rp-sig -storepass {{keystore_password}} -noprompt -v"
+    args:
+      stdin: "{{keystore_password}}\n"
+
+  - name: Generate static session key
+    command: "keytool -genseckey -alias session-unison -keyalg AES -keysize 256 -storetype PKCS12 -keystore {{local_dest_path}}/unisonKeystore.p12 -noprompt"
+    args:
+      stdin: "{{keystore_password}}\n"
+
+  - name: Generate static oidc key
+    command: "keytool -genseckey -alias lastmile-oidc -keyalg AES -keysize 256 -storetype PKCS12 -keystore {{local_dest_path}}/unisonKeystore.p12 -noprompt"
+    args:
+      stdin: "{{keystore_password}}\n"
+  
+  - name: load unisonKeystore.p12
+    register: secret_keystore
+    command: "base64 -w 0  {{ local_dest_path }}/unisonKeystore.p12"
+
+  - name: load openunison.yaml
+    register: secret_openunison_yaml
+    command: "base64 -w 0  {{ local_dest_path }}/openunison.yaml"
+
+  - name: load ou.env
+    register: secret_ou_env
+    command: "base64 -w 0  {{ local_dest_path }}/ou.env"
+
+  - name: generate secret
+    template:
+      src: "{{ local_src_path }}/openunison-secret.yaml.template"
+      dest: "{{ local_dest_path }}/openunison-secret.yaml"
+      mode: 0644
+
+  - name: check if secret exists
+    register: secret_exists
+    command: "oc get secret -n {{ openunison_openshift_project_name }}"
+
+  - name: delete existing secret
+    command: "oc delete -f {{ local_dest_path }}/openunison-secret.yaml -n {{ openunison_openshift_project_name }}"
+    when: "secret_exists.stderr != ''"
+
+  - name: create new secret
+    command: "oc create -f {{ local_dest_path }}/openunison-secret.yaml -n {{ openunison_openshift_project_name }}"
+
+  - name: deleting tmp files 
+    file:
+      path: "{{local_dest_path}}/unisonKeystore_2.p12"
+      state: absent
+
+  - name: deleting tmp files 
+    file:
+      path: "{{local_dest_path}}/certificate.crt"
+      state: absent
+
+  - name: deleting tmp files 
+    file:
+      path: "{{local_dest_path}}/privateKey.key"
+      state: absent
+
+  - name: pull util jar
+    get_url:
+      url: "https://www.tremolosecurity.com/nexus/service/local/repositories/releases/content/com/tremolosecurity/unison/openunison-util/{{openunison_version}}/openunison-util-{{openunison_version}}.jar"
+      dest: "/tmp/openunison-util-{{openunison_version}}.jar"
+
+  - name: generate metatdata
+    register: metadata_output
+    command: "java -jar /tmp/openunison-util-{{openunison_version}}.jar -action export-sp-metadata -chainName enterprise_idp -unisonXMLFile {{local_src_path}}/../../../src/main/webapp/WEB-INF/unison.xml -keystorePath {{local_dest_path}}/unisonKeystore.p12 -envFile {{local_dest_path}}/ou.env -mechanismName SAML2 -urlBase https://{{openunison_hostname}}"
+
+  - name: write metadata to disk
+    copy: content="{{ metadata_output.stdout }}" dest="{{local_dest_path}}/openunison_rp_metadata_tmp.xml"
+
+  - name: strip log data
+    register: metadata_output
+    command: "tail -n +16 {{local_dest_path}}/openunison_rp_metadata_tmp.xml"
+
+  - name: write metadata to disk
+    copy: content="{{ metadata_output.stdout }}" dest="{{local_dest_path}}/openunison_rp_metadata.xml"
+  
+  - name: deleting tmp files 
+    file:
+      path: "{{local_dest_path}}/openunison_rp_metadata_tmp.xml"
+      state: absent
+
+  - name: import idp cert
+    command: "keytool -import -keystore {{ local_dest_path }}/unisonKeystore.p12 -storetype PKCS12 -alias idp-saml2-sig -trustcacerts -file {{ local_dest_path }}/idp.der -noprompt"
+    args:
+      stdin: "{{keystore_password}}\n"
+
+  - name: deleting tmp files 
+    file:
+      path: "{{local_dest_path}}/idp.der"
+      state: absent
+
+  - name: deleting tmp files 
+    file:
+      path: "{{local_dest_path}}/idp.b64"
+      state: absent
+
+  - name: import openshift cert
+    command: "keytool -import -keystore {{ local_dest_path }}/unisonKeystore.p12 -storetype PKCS12 -alias openshift-master -rfc -trustcacerts -file {{ openshift_ca_cert }} -noprompt"
+    args:
+      stdin: "{{keystore_password}}\n"
+
+  - name: import template
+    shell: "oc create -f {{local_src_path}}/../../../src/main/json/openunison-https-s2i.json -n {{ openunison_openshift_project_name }}"
+    
+  
+  - name: import image
+    shell: "oc import-image openunison-s2i:latest --from={{ openunison_build_image }} --confirm=true"
+
+  - name: deploy openunison
+    shell: "oc process openunison-https-s2i  -p APPLICATION_NAME=openunison -p HOSTNAME_HTTPS={{openunison_hostname}} -p SOURCE_REPOSITORY_URL={{openunison_github_repo}} | oc create -f -"

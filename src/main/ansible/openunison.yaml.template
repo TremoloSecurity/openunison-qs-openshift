@@ -1,0 +1,20 @@
+---
+open_port: 8080
+open_external_port: 80
+secure_port: 8443
+secure_external_port: 443
+secure_key_alias: "unison-tls"
+force_to_secure: true
+activemq_dir: "/tmp/amq"
+quartz_dir: "/tmp/quartz"
+client_auth: none
+allowed_client_names: []
+ciphers:
+- TLS_RSA_WITH_RC4_128_SHA
+- TLS_RSA_WITH_AES_128_CBC_SHA
+- TLS_RSA_WITH_AES_256_CBC_SHA
+- TLS_RSA_WITH_3DES_EDE_CBC_SHA
+- TLS_RSA_WITH_AES_128_CBC_SHA256
+- TLS_RSA_WITH_AES_256_CBC_SHA256
+path_to_deployment: "/usr/local/openunison/work"
+path_to_env_file: "/etc/openunison/ou.env"

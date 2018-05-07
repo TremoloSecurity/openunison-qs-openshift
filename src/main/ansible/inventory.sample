@@ -1,0 +1,37 @@
+[openunison_openshift]
+local
+
+[openunison_openshift:vars]
+local_src_path=/home/mlb/git/openunison-qs-openshift/src/main/ansible
+local_dest_path=/tmp/output
+openunison_version=1.0.14
+idp_metadata_xml=/home/mlb/Downloads/federationmetadata_ent2k12.xml
+
+
+openunison_hostname=openunison.devlocal.lan
+hibernate_dialect=org.hibernate.dialect.MySQL5InnoDBDialect
+jdbc_driver=com.mysql.jdbc.Driver
+jdbc_url=jdbc:mysql://192.168.122.1:3306/openunison
+jdbc_user=root
+jdbc_password=start123
+jdbc_validation_query=SELECT 1
+smtp_host=localhost
+smtp_port=25
+smtp_user=secret
+smtp_password=secret
+smtp_from_email=donotreply@doesntexist.local
+smtp_tls=false
+openshift_console_url=https://os.devlocal.lan:8443/console/
+openshift_oidc_token=secret
+openshift_oidc_callback_url=https://os.devlocal.lan:8443/oauth2callback/openunison
+openshift_ou_internal_host=openunison.openunison.svc
+keystore_password=start123
+
+openshift_ca_cert=/home/mlb/Downloads/openshift.pem
+openunison_openshift_project_name=openunison
+openunison_tls_subject=/C=US/ST=Virginia/L=Alexandria/O=Tremolo Security, Inc./OU=dev/CN=openunison.devlocal.lan/
+openunison_rp_subject=/C=US/ST=Virginia/L=Alexandria/O=Tremolo Security, Inc./OU=dev/CN=saml2-rp-sig/
+
+openunison_build_type=internal
+openunison_build_image=docker.io/tremolosecurity/openunisons2idocker:latest
+openunison_github_repo=https://github.com/TremoloSecurity/openunison-qs-openshift.git
