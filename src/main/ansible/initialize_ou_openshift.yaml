@@ -90,6 +90,27 @@
     command: "keytool -genseckey -alias lastmile-oidc -keyalg AES -keysize 256 -storetype PKCS12 -keystore {{local_dest_path}}/unisonKeystore.p12 -noprompt"
     args:
       stdin: "{{keystore_password}}\n"
+
+  - name: import idp cert
+    command: "keytool -import -keystore {{ local_dest_path }}/unisonKeystore.p12 -storetype PKCS12 -alias idp-saml2-sig -trustcacerts -file {{ local_dest_path }}/idp.der -noprompt"
+    args:
+      stdin: "{{keystore_password}}\n"
+
+  - name: deleting tmp files 
+    file:
+      path: "{{local_dest_path}}/idp.der"
+      state: absent
+
+  - name: deleting tmp files 
+    file:
+      path: "{{local_dest_path}}/idp.b64"
+      state: absent
+
+  - name: import openshift cert
+    command: "keytool -import -keystore {{ local_dest_path }}/unisonKeystore.p12 -storetype PKCS12 -alias openshift-master -rfc -trustcacerts -file {{ openshift_ca_cert }} -noprompt"
+    args:
+      stdin: "{{keystore_password}}\n"
+
   
   - name: load unisonKeystore.p12
     register: secret_keystore
@@ -159,32 +180,52 @@
       path: "{{local_dest_path}}/openunison_rp_metadata_tmp.xml"
       state: absent
 
-  - name: import idp cert
-    command: "keytool -import -keystore {{ local_dest_path }}/unisonKeystore.p12 -storetype PKCS12 -alias idp-saml2-sig -trustcacerts -file {{ local_dest_path }}/idp.der -noprompt"
-    args:
-      stdin: "{{keystore_password}}\n"
-
-  - name: deleting tmp files 
-    file:
-      path: "{{local_dest_path}}/idp.der"
-      state: absent
-
-  - name: deleting tmp files 
-    file:
-      path: "{{local_dest_path}}/idp.b64"
-      state: absent
-
-  - name: import openshift cert
-    command: "keytool -import -keystore {{ local_dest_path }}/unisonKeystore.p12 -storetype PKCS12 -alias openshift-master -rfc -trustcacerts -file {{ openshift_ca_cert }} -noprompt"
-    args:
-      stdin: "{{keystore_password}}\n"
-
   - name: import template
     shell: "oc create -f {{local_src_path}}/../../../src/main/json/openunison-https-s2i.json -n {{ openunison_openshift_project_name }}"
-    
+    when: openunison_build_type == 'internal'
   
   - name: import image
     shell: "oc import-image openunison-s2i:latest --from={{ openunison_build_image }} --confirm=true"
+    when: openunison_build_type == 'internal'
 
   - name: deploy openunison
     shell: "oc process openunison-https-s2i  -p APPLICATION_NAME=openunison -p HOSTNAME_HTTPS={{openunison_hostname}} -p SOURCE_REPOSITORY_URL={{openunison_github_repo}} | oc create -f -"
+    when: openunison_build_type ==  'internal'
+
+  - name: pull builder image
+    shell: "docker pull {{openunison_build_image}}"
+    when: openunison_build_type == 'external'
+
+  - name: login to the registry
+    shell: "docker login -u admin -p $(oc whoami -t) {{openshift_registry_host}}"
+    when: openunison_build_type == 'external'
+
+  - name: s2i build
+    shell: "s2i build {{openunison_github_repo}} {{openunison_build_image}} {{openshift_registry_host}}/{{ openunison_openshift_project_name }}/openunison:latest"
+    when: openunison_build_type == 'external'
+
+  - name: import local build template
+    shell: "oc create -f {{local_src_path}}/../../../src/main/json/openunison-https-bin.json -n {{ openunison_openshift_project_name }}"
+    when: openunison_build_type == 'external'
+
+  - name: deploy openunison from internal build
+    shell: "oc process openunison-https-bin  -p APPLICATION_NAME=openunison -p HOSTNAME_HTTPS={{openunison_hostname}}  | oc create -n {{ openunison_openshift_project_name }} -f -"
+    when: openunison_build_type == 'external'
+
+  - name: push image to openshift
+    shell: "docker push {{openshift_registry_host}}/{{ openunison_openshift_project_name }}/openunison:latest"
+    when: openunison_build_type == 'external'
+
+  - name: generate master config file
+    template:
+      src: "{{ local_src_path }}/master_config_sso.yaml.template"
+      dest: "{{ local_dest_path }}/master_config_sso.yaml"
+      mode: 0644
+
+  - name: generate ansible config file
+    template:
+      src: "{{ local_src_path }}/ansible_config_sso.yaml.template"
+      dest: "{{ local_dest_path }}/ansible_config_sso.yaml"
+      mode: 0644
+
+  

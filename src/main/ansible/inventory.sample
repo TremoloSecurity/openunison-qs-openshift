@@ -32,6 +32,8 @@ openunison_openshift_project_name=openunison
 openunison_tls_subject=/C=US/ST=Virginia/L=Alexandria/O=Tremolo Security, Inc./OU=dev/CN=openunison.devlocal.lan/
 openunison_rp_subject=/C=US/ST=Virginia/L=Alexandria/O=Tremolo Security, Inc./OU=dev/CN=saml2-rp-sig/
 
-openunison_build_type=internal
+openunison_build_type=external
 openunison_build_image=docker.io/tremolosecurity/openunisons2idocker:latest
-openunison_github_repo=https://github.com/TremoloSecurity/openunison-qs-openshift.git
+openunison_github_repo=/home/mlb/git/openunison-qs-openshift/target
+openshift_registry_host=docker-registry-default.apps.os.devlocal.lan
+openshift_master_openunison_ca_path=/var/lib/origin/openshift.local.config/master/openunison_ca.crt

@@ -1,0 +1,29 @@
+oauthConfig:
+  alwaysShowProviderSelection: false
+  assetPublicURL: {{ openshift_console_url }}
+  grantConfig:
+    method: auto
+    serviceAccountMethod: prompt
+  identityProviders:
+  - name: openunison
+    challenge: true
+    login: true
+    mappingMethod: claim
+    provider:
+      apiVersion: v1
+      kind: OpenIDIdentityProvider
+      clientID: openshift
+      clientSecret: {{ openshift_oidc_token }}
+      ca: {{ openshift_master_openunison_ca_path }}
+      claims:
+        id:
+        - sub
+        preferredUsername:
+        - preferred_username
+        name:
+        - name
+        email:
+        - email
+      urls:
+        authorize: https://{{ openunison_hostname }}/auth/idp/OpenShiftIdP/auth
+        token: https://{{ openunison_hostname }}/auth/idp/OpenShiftIdP/token
